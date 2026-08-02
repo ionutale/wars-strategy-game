@@ -24,4 +24,15 @@ describe("GameLoop", () => {
     loop.step(10_000); // huge frame gap
     expect(ticks).toBeLessThanOrEqual(10);
   });
+
+  it("passes a valid interpolation alpha to render", () => {
+    const alphas: number[] = [];
+    const loop = new GameLoop({ tick: () => {}, render: (a) => { alphas.push(a); } });
+    loop.step(0);
+    loop.step(1000 / 60 + 9); // ~1.55 ticks -> 1 tick, ~9ms leftover
+    expect(alphas.length).toBeGreaterThan(0);
+    const last = alphas[alphas.length - 1];
+    expect(last).toBeGreaterThan(0);
+    expect(last).toBeLessThan(1);
+  });
 });

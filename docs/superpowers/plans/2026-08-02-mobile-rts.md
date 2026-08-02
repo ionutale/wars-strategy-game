@@ -188,9 +188,9 @@ describe("GameLoop", () => {
       render: () => {},
     });
     loop.step(0);
-    loop.step(1000 / 60 + 33); // one frame of ~1.55 ticks
+    loop.step(1000 / 60 + 9); // one frame of ~1.55 ticks
     expect(ticks).toBe(1); // fractional tick accumulated, not executed
-    loop.step(1000 / 60); // now crosses the boundary
+    loop.step(2 * (1000 / 60) + 9); // now crosses the boundary
     expect(ticks).toBe(2);
     expect(acc).toBeCloseTo(2 / 60, 5);
   });
@@ -201,6 +201,17 @@ describe("GameLoop", () => {
     loop.step(0);
     loop.step(10_000); // huge frame gap
     expect(ticks).toBeLessThanOrEqual(10);
+  });
+
+  it("passes a valid interpolation alpha to render", () => {
+    const alphas: number[] = [];
+    const loop = new GameLoop({ tick: () => {}, render: (a) => { alphas.push(a); } });
+    loop.step(0);
+    loop.step(1000 / 60 + 9); // ~1.55 ticks -> 1 tick, ~9ms leftover
+    expect(alphas.length).toBeGreaterThan(0);
+    const last = alphas[alphas.length - 1];
+    expect(last).toBeGreaterThan(0);
+    expect(last).toBeLessThan(1);
   });
 });
 ```
@@ -224,13 +235,14 @@ export interface LoopCallbacks {
 
 export class GameLoop {
   private acc = 0;
-  private last = 0;
+  private last: number | null = null;
   private rafId: number | null = null;
   private running = false;
 
   constructor(private cb: LoopCallbacks) {}
 
   start(): void {
+    if (this.running) return;
     this.last = performance.now();
     this.running = true;
     const frame = (now: number) => {
@@ -249,7 +261,7 @@ export class GameLoop {
 
   /** Advance the loop by wall-clock now. Public for tests. */
   step(now: number): void {
-    if (this.last === 0) { this.last = now; return; }
+    if (this.last === null) { this.last = now; return; }
     let elapsed = now - this.last;
     this.last = now;
     if (elapsed < 0) elapsed = 0;

@@ -16,6 +16,7 @@ export class GameLoop {
   constructor(private cb: LoopCallbacks) {}
 
   start(): void {
+    if (this.running) return;
     this.last = performance.now();
     this.running = true;
     const frame = (now: number) => {
