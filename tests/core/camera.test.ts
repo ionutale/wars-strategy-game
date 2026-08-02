@@ -22,9 +22,9 @@ describe("Camera", () => {
   it("zooms about a screen point keeping it fixed", () => {
     const cam = new Camera(800, 600);
     cam.x = 100; cam.y = 100;
-    const before = cam.screenToWorld(400, 300);
-    cam.setZoom(1.5, 400, 300);
-    const after = cam.screenToWorld(400, 300);
+    const before = cam.screenToWorld(200, 150);
+    cam.setZoom(1.5, 200, 150);
+    const after = cam.screenToWorld(200, 150);
     expect(after.x).toBeCloseTo(before.x, 5);
     expect(after.y).toBeCloseTo(before.y, 5);
   });
