@@ -5,12 +5,15 @@ export const FACTION_COLORS: Record<Faction, { main: string; accent: string; dar
   red: { main: "#ff5d5d", accent: "#ffb3b3", dark: "#991b1b" },
 };
 
-export function drawUnit(ctx: CanvasRenderingContext2D, type: string, faction: Faction, x: number, y: number, facing: number): void {
+/** Draw a unit. `scale` = pixels per sprite-unit (pass pxPerTile/14 from the renderer so a unit is ~0.7 tiles wide). */
+export function drawUnit(ctx: CanvasRenderingContext2D, type: string, faction: Faction, x: number, y: number, facing: number, scale: number): void {
   const c = FACTION_COLORS[faction];
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(facing);
+  ctx.scale(scale, scale);
   ctx.fillStyle = c.main;
+  ctx.lineWidth = 1 / scale;
   switch (type) {
     case "worker":
       ctx.beginPath(); ctx.arc(0, 0, 4, 0, Math.PI * 2); ctx.fill();

@@ -14,6 +14,17 @@ import { MISSIONS } from "./content/missions";
 import { saveProgress, loadProgress } from "./net/api";
 import { startMusic, playSfx } from "./audio/audio";
 
+declare global {
+  interface Window {
+    /** E2E test hook — exposes live game state for Playwright assertions. */
+    __wars?: {
+      session: Session;
+      cam: Camera;
+      tick: (dt: number) => void;
+    };
+  }
+}
+
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d")!;
 const session: Session = createSession();
@@ -195,16 +206,28 @@ const loop = new GameLoop({
 
 // --- menu wiring ---
 let endCleanup: (() => void) | null = null;
+
+/** Fit the whole map in the viewport after starting a game. */
+function fitCameraToMap(): void {
+  const w = session.world;
+  cam.zoom = cam.fitZoomToMap(w.map.w, w.map.h);
+  cam.x = w.map.w / 2;
+  cam.y = w.map.h / 2;
+  cam.clampToMap(w.map.w, w.map.h);
+}
+
 showMainMenu({
   onCampaign: () => {
     startMusic();
     startCampaign(session);
+    fitCameraToMap();
     if (endCleanup) endCleanup();
     loop.start();
   },
   onSkirmish: (d) => {
     startMusic();
     startSkirmish(session, d);
+    fitCameraToMap();
     if (endCleanup) endCleanup();
     loop.start();
   },
@@ -255,3 +278,10 @@ setInterval(() => {
     });
   }
 }, 250);
+
+// --- E2E test hook ---
+window.__wars = {
+  session,
+  cam,
+  tick: (dt: number) => tickWorld(session, dt),
+};
