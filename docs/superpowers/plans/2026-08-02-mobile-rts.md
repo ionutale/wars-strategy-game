@@ -177,7 +177,7 @@ git commit -m "chore: scaffold vite + typescript + vitest project"
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { GameLoop } from "../src/core/loop";
+import { GameLoop } from "../../src/core/loop";
 
 describe("GameLoop", () => {
   it("ticks at 60Hz regardless of frame time", () => {
@@ -285,7 +285,7 @@ git commit -m "feat: fixed-timestep game loop"
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { Camera } from "../src/core/camera";
+import { Camera } from "../../src/core/camera";
 
 describe("Camera", () => {
   it("converts world<->screen at zoom 1", () => {
@@ -393,7 +393,7 @@ git commit -m "feat: camera with pan, pinch zoom, transforms"
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { classifyGesture, DragKind, GESTURE_TAP, GESTURE_DRAG, GESTURE_PINCH } from "../src/core/input";
+import { classifyGesture, DragKind, GESTURE_TAP, GESTURE_DRAG, GESTURE_PINCH } from "../../src/core/input";
 
 describe("classifyGesture", () => {
   it("classifies small movement as a tap", () => {
@@ -513,7 +513,7 @@ git commit -m "feat: touch gesture classification"
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { createEntity, isBuilding, isUnit } from "../src/world/entity";
+import { createEntity, isBuilding, isUnit } from "../../src/world/entity";
 
 describe("entity", () => {
   it("allocates unique ids", () => {
@@ -640,7 +640,7 @@ git commit -m "feat: entity model and factory"
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { createMap, MapData, findPath } from "../src/world/map";
+import { createMap, MapData, findPath } from "../../src/world/map";
 
 function makeMap(w: number, h: number, blocked: [number, number][]): MapData {
   const m = createMap(w, h);
@@ -826,9 +826,9 @@ git commit -m "feat: tile map, resource nodes, A* pathfinding"
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { createWorld, drainEvents } from "../src/world/world";
-import { createGoldMine } from "../src/world/map";
-import { createEntity } from "../src/world/entity";
+import { createWorld, drainEvents } from "../../src/world/world";
+import { createGoldMine } from "../../src/world/map";
+import { createEntity } from "../../src/world/entity";
 describe("createWorld", () => {
   it("holds entities, resources, and starting resources", () => {
     const w = createWorld(40, 30);
@@ -3546,7 +3546,7 @@ git commit -m "feat: express server with atlas progress persistence"
 ```ts
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
-import { getPlayerId, loadProgress, saveProgress, SAVE_URL } from "../src/net/api";
+import { getPlayerId, loadProgress, saveProgress, SAVE_URL } from "../../src/net/api";
 
 describe("api client", () => {
   it("returns a stable player id from localStorage", () => {
