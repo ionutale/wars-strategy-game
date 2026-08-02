@@ -51,7 +51,7 @@ export function createTreePatch(x: number, y: number, amount = 100): ResourceNod
   return { id: resourceId++, kind: "wood", x, y, amount, maxWorkers: 4 };
 }
 
-const DIAGS = 1.4142;
+const DIAGS = Math.SQRT2;
 
 export function findPath(map: MapData, from: Vec2, to: Vec2): Vec2[] | null {
   const sx = Math.floor(from.x);
@@ -59,9 +59,9 @@ export function findPath(map: MapData, from: Vec2, to: Vec2): Vec2[] | null {
   const gx = Math.floor(to.x);
   const gy = Math.floor(to.y);
   if (!map.walkable(sx, sy) || !map.walkable(gx, gy)) return null;
-  if (sx === gx && sy === gy) return [to];
+  if (sx === gx && sy === gy) return [{ x: sx, y: sy }];
 
-  const open: { x: number; y: number; f: number; g: number; parent: { x: number; y: number } | null }[] = [{ x: sx, y: sy, f: 0, g: 0, parent: null }];
+  const open: { x: number; y: number; f: number; g: number }[] = [{ x: sx, y: sy, f: 0, g: 0 }];
   const cameFrom = new Map<string, { x: number; y: number } | null>();
   const gScore = new Map<string, number>();
   const key = (x: number, y: number) => `${x},${y}`;
@@ -101,7 +101,7 @@ export function findPath(map: MapData, from: Vec2, to: Vec2): Vec2[] | null {
         gScore.set(nk, tentative);
         cameFrom.set(nk, { x: cur.x, y: cur.y });
         const h = Math.hypot(nx - gx, ny - gy);
-        open.push({ x: nx, y: ny, f: tentative + h, g: tentative, parent: cur });
+        open.push({ x: nx, y: ny, f: tentative + h, g: tentative });
       }
     }
   }

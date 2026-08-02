@@ -18,6 +18,12 @@ describe("MapData", () => {
 });
 
 describe("findPath", () => {
+  it("returns a single waypoint when already at the goal tile", () => {
+    const m = makeMap(5, 5, []);
+    const path = findPath(m, { x: 2, y: 2 }, { x: 2.4, y: 2.6 });
+    expect(path).toEqual([{ x: 2, y: 2 }]);
+  });
+
   it("finds a straight path on open ground", () => {
     const m = makeMap(5, 5, []);
     const path = findPath(m, { x: 0, y: 0 }, { x: 4, y: 0 });
