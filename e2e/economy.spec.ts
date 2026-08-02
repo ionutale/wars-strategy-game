@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { clickButton, selectEntity, setPools, snapshot, spawnUnit, startSkirmish } from "./helpers";
+import { clickButton, selectEntity, setPools, snapshot, spawnUnit, startSkirmish, tapCanvas, worldToScreen } from "./helpers";
 
 test.describe("economy — worker inputs", () => {
   test("resource bar shows gold, wood and food", async ({ page }) => {
@@ -173,4 +173,28 @@ test.describe("economy — worker inputs", () => {
       .poll(async () => (await snapshot(page)).pools.blue.gold, { timeout: 20_000 })
       .toBeGreaterThan(gold0);
   });
+});
+
+test("Move button sends a gathering worker to a new location", async ({ page }) => {
+  await startSkirmish(page);
+  const snap = await snapshot(page);
+  const worker = snap.entities.find((e) => e.type === "worker" && e.faction === "blue")!;
+  await selectEntity(page, worker.id);
+  await clickButton(page, "Move");
+  const dest = { x: 18, y: 18 };
+  const screen = await worldToScreen(page, dest.x, dest.y);
+  await tapCanvas(page, screen.x, screen.y);
+  // order becomes move and the worker walks there
+  await expect
+    .poll(async () => (await snapshot(page)).entities.find((x) => x.id === worker.id)!.order)
+    .toMatchObject({ type: "move" });
+  await expect
+    .poll(async () => {
+      const e = (await snapshot(page)).entities.find((x) => x.id === worker.id)!;
+      return Math.hypot(e.x - dest.x, e.y - dest.y);
+    }, { timeout: 20_000 })
+    .toBeLessThan(2);
+  // and it does NOT resume gathering on arrival (no gather order)
+  const w2 = (await snapshot(page)).entities.find((x) => x.id === worker.id)!;
+  expect(w2.order).toBeNull();
 });

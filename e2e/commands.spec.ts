@@ -140,3 +140,23 @@ test.describe("command bar", () => {
     await expect.poll(async () => (await snapshot(page)).time, { timeout: 10_000 }).toBeGreaterThan(t1 + 1);
   });
 });
+
+test("catapult fires at an enemy building when tapped on its edge", async ({ page }) => {
+  await startSkirmish(page);
+  const snap = await snapshot(page);
+  const redHall = snap.entities.find((e) => e.type === "town-hall" && e.faction === "red")!;
+  const cat = await spawnUnit(page, "catapult", "blue", redHall.x - 7, redHall.y);
+  await selectEntity(page, cat);
+  await clickButton(page, "Attack");
+  // tap 1.4 tiles from the hall's center — still on its footprint
+  const edge = await worldToScreen(page, redHall.x - 1.4, redHall.y);
+  await tapCanvas(page, edge.x, edge.y);
+  // the tap must register as an attack order, not a move
+  await expect
+    .poll(async () => (await snapshot(page)).entities.find((x) => x.id === cat)!.order)
+    .toMatchObject({ type: "attack", targetId: redHall.id });
+  // and the building takes splash damage over time
+  await expect
+    .poll(async () => (await snapshot(page)).entities.find((x) => x.id === redHall.id)!.hp, { timeout: 20_000 })
+    .toBeLessThan(300);
+});

@@ -135,9 +135,11 @@ export async function tapCanvas(page: Page, sx: number, sy: number): Promise<voi
 export async function clickButton(page: Page, label: string): Promise<void> {
   for (let attempt = 0; attempt < 5; attempt++) {
     const clicked = await page.evaluate((lbl) => {
-      const btn = [...document.querySelectorAll<HTMLButtonElement>("button.hud-btn")].find(
-        (b) => b.textContent?.trim() === lbl,
-      );
+      const btn = [...document.querySelectorAll<HTMLButtonElement>("button.hud-btn")].find((b) => {
+        const labelEl = b.querySelector(".btn-label");
+        const text = labelEl ? labelEl.textContent?.trim() : b.textContent?.trim();
+        return text === lbl;
+      });
       if (!btn) return false;
       btn.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: 1, clientX: 0, clientY: 0 }));
       return true;

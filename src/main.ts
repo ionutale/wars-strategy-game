@@ -8,7 +8,7 @@ import { createSession, startCampaign, startSkirmish, handleCommand, Session } f
 import { tickWorld } from "./state/update";
 import { moveTo } from "./world/systems/movement";
 import { orderAttack } from "./world/systems/combat";
-import { canPlace } from "./world/systems/building";
+import { canPlace, BUILDINGS } from "./world/systems/building";
 import { sfx } from "./world/world";
 import type { CommandName } from "./ui/hud";
 import { MISSIONS } from "./content/missions";
@@ -168,11 +168,14 @@ function handleTap(sx: number, sy: number): void {
 
 function pickEntity(wx: number, wy: number): import("./world/entity").Entity | null {
   let best: import("./world/entity").Entity | null = null;
-  let bestD = 0.6;
+  let bestD = Infinity;
   for (const e of session.world.entities.values()) {
     if (e.dead || e.kind === "projectile") continue;
     const d = Math.hypot(e.x - wx, e.y - wy);
-    if (d < bestD) { bestD = d; best = e; }
+    // Buildings are positioned at their center; accept taps across the whole
+    // footprint (plus a margin) so ordering an attack on a big building works.
+    const tolerance = e.kind === "building" ? BUILDINGS[e.type].footprint / 2 + 0.5 : 0.6;
+    if (d <= tolerance && d < bestD) { bestD = d; best = e; }
   }
   return best;
 }

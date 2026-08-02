@@ -253,3 +253,29 @@ test.describe("building", () => {
     }
   });
 });
+
+test("command buttons show costs", async ({ page }) => {
+  await startCampaignAt(page, 3); // m4: barracks, stables, church, blacksmith, castle
+  let snap = await snapshot(page);
+  // worker: Build menu shows building costs
+  const worker = snap.entities.find((e) => e.type === "worker" && e.faction === "blue")!;
+  await selectEntity(page, worker.id);
+  await clickButton(page, "Build");
+  await expect(page.getByRole("button", { name: /Farm/ })).toContainText("100g");
+  await expect(page.getByRole("button", { name: /Barracks/ })).toContainText("180g 60w");
+  await expect(page.getByRole("button", { name: /Tower/ })).toContainText("150g 80w");
+  await expect(page.getByRole("button", { name: /Castle/ })).toContainText("900g");
+  // barracks: unit training costs
+  const barracks = (await snapshot(page)).entities.find((e) => e.type === "barracks" && e.faction === "blue")!;
+  await selectEntity(page, barracks.id);
+  await expect(page.getByRole("button", { name: /Footman/ })).toContainText("90g 20w");
+  await expect(page.getByRole("button", { name: /Archer/ })).toContainText("100g 40w");
+  // stables: knight
+  const stables = (await snapshot(page)).entities.find((e) => e.type === "stables" && e.faction === "blue")!;
+  await selectEntity(page, stables.id);
+  await expect(page.getByRole("button", { name: /Knight/ })).toContainText("180g 60w");
+  // town hall: worker cost
+  const hall = (await snapshot(page)).entities.find((e) => e.type === "castle" && e.faction === "blue")!;
+  await selectEntity(page, hall.id);
+  await expect(page.getByRole("button", { name: /Worker/ })).toContainText("60g");
+});

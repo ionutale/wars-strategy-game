@@ -1,6 +1,8 @@
 import type { World } from "../world/world";
 import type { Entity } from "../world/entity";
 import { foodUsed } from "../world/world";
+import { BUILDINGS } from "../world/systems/building";
+import { UNIT_DEFS } from "../content/units";
 import { el, button, injectStyles } from "./dom";
 
 export interface HudActions {
@@ -17,7 +19,9 @@ injectStyles(`
   .hud-top { position: absolute; top: 8px; left: 8px; right: 8px; display: flex; gap: 10px; align-items: center; background: rgba(0,0,0,.6); border-radius: 6px; padding: 6px 10px; font-size: 14px; }
   .hud-top .spacer { flex: 1; }
   .hud-top .gold { color: #d4af37; } .hud-top .wood { color: #8b5a2b; } .hud-top .food { color: #86efac; }
-  .hud-btn { background: #3d4a3a; border: 1px solid #7a8a70; color: #e8f5e0; border-radius: 5px; padding: 8px 10px; font-size: 13px; font-family: monospace; }
+  .hud-btn { background: #3d4a3a; border: 1px solid #7a8a70; color: #e8f5e0; border-radius: 5px; padding: 6px 10px; font-size: 13px; font-family: monospace; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .hud-btn .btn-label { line-height: 1.1; }
+  .hud-btn .btn-cost { font-size: 10px; color: #d4af37; opacity: 0.9; }
   .hud-btn:active { background: #b45309; border-color: #fbbf24; }
   .hud-commandbar { position: absolute; left: 8px; right: 8px; bottom: 8px; display: flex; gap: 6px; justify-content: center; }
   .hud-panel { position: absolute; left: 8px; bottom: 64px; background: rgba(0,0,0,.7); border-radius: 6px; padding: 8px 10px; font-size: 12px; min-width: 160px; }
@@ -98,6 +102,7 @@ export class Hud {
         this.addToggleBtn("Build");
         this.addBtn("Gather Gold", "gather-gold", e);
         this.addBtn("Gather Wood", "gather-wood", e);
+        this.addBtn("Move", "move", e);
         this.addBtn("Stop", "stop", e);
         this.addBtn("Hold", "hold", e);
       }
@@ -118,7 +123,8 @@ export class Hud {
   }
 
   private addBtn(label: string, cmd: CommandName, e: Entity): void {
-    this.commandBar.appendChild(button(label, () => {
+    const cost = commandCost(cmd);
+    this.commandBar.appendChild(buttonWithCost(label, cost, () => {
       this.actions.onCommand(cmd, e);
       if (cmd.startsWith("build-")) this.buildOpen = false;
     }));
@@ -132,6 +138,32 @@ export class Hud {
 function span(cls: string, text: string): HTMLSpanElement {
   const s = el("span", cls, text);
   return s;
+}
+
+/** Render a command button with an optional two-line cost (label over cost). */
+function buttonWithCost(label: string, cost: { gold: number; wood: number } | null, onClick: () => void): HTMLButtonElement {
+  const b = el("button", "hud-btn");
+  b.append(el("span", "btn-label", label));
+  if (cost) {
+    const parts: string[] = [];
+    if (cost.gold > 0) parts.push(`${cost.gold}g`);
+    if (cost.wood > 0) parts.push(`${cost.wood}w`);
+    if (parts.length > 0) b.append(el("span", "btn-cost", parts.join(" ")));
+  }
+  b.addEventListener("pointerdown", (ev) => { ev.stopPropagation(); onClick(); });
+  return b;
+}
+
+function commandCost(cmd: CommandName): { gold: number; wood: number } | null {
+  if (cmd.startsWith("build-")) {
+    const def = BUILDINGS[cmd.replace("build-", "")];
+    return def ? def.cost : null;
+  }
+  if (cmd.startsWith("train-")) {
+    const def = UNIT_DEFS[cmd.replace("train-", "")];
+    return def ? def.cost : null;
+  }
+  return null;
 }
 
 function row(label: string, value: string): HTMLDivElement {
