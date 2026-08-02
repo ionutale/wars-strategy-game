@@ -11,7 +11,7 @@ export function render(world: World, cam: Camera, ctx: CanvasRenderingContext2D,
   drawTerrain(world, cam, ctx);
   drawResourceNodes(world, cam, ctx);
   for (const e of world.entities.values()) {
-    if (e.kind === "projectile") continue;
+    if (e.kind === "projectile" || e.dead) continue;
     const s = cam.worldToScreen(e.x, e.y);
     if (s.x < -50 || s.y < -50 || s.x > cam.viewW + 50 || s.y > cam.viewH + 50) continue;
     if (e.kind === "unit") {
@@ -21,15 +21,15 @@ export function render(world: World, cam: Camera, ctx: CanvasRenderingContext2D,
       const size = def.footprint * TILE * cam.zoom;
       drawBuilding(ctx, e.type, e.faction, s.x, s.y, size, e.progress);
     }
-    if (selected.has(e.id)) drawSelection(ctx, s.x, s.y, (e.kind === "building" ? 1.2 : 0.7) * cam.zoom, cam.zoom);
+    if (selected.has(e.id)) drawSelection(ctx, s.x, s.y, (e.kind === "building" ? 16 : 10) * cam.zoom);
     if (e.hp < e.maxHp) drawHpBar(ctx, s.x, s.y, e.hp / e.maxHp, (e.kind === "building" ? 2.4 : 1) * cam.zoom);
   }
   for (const p of world.entities.values()) {
-    if (p.kind !== "projectile") continue;
+    if (p.kind !== "projectile" || p.dead) continue;
     const s = cam.worldToScreen(p.x, p.y);
     ctx.fillStyle = "#fbbf24";
     ctx.beginPath();
-    ctx.arc(s.x, s.y, 0.18 * cam.zoom, 0, Math.PI * 2);
+    ctx.arc(s.x, s.y, 3 * cam.zoom, 0, Math.PI * 2);
     ctx.fill();
   }
 }
@@ -74,16 +74,16 @@ function drawResourceNodes(world: World, cam: Camera, ctx: CanvasRenderingContex
       ctx.arc(s.x, s.y, 9 * cam.zoom, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = "#5b4027";
-      ctx.fillRect(s.x - 1, s.y + 4, 2, 6 * cam.zoom);
+      ctx.fillRect(s.x - 1 * cam.zoom, s.y + 4 * cam.zoom, 2 * cam.zoom, 6 * cam.zoom);
     }
   }
 }
 
-function drawSelection(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, zoom: number): void {
+function drawSelection(ctx: CanvasRenderingContext2D, x: number, y: number, r: number): void {
   ctx.strokeStyle = "#9be0ff";
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.arc(x, y, r * zoom, 0, Math.PI * 2);
+  ctx.arc(x, y, r, 0, Math.PI * 2);
   ctx.stroke();
 }
 
