@@ -56,6 +56,7 @@ export function updateConstruction(w: World, dt: number): void {
         b.progress = 0;
         b.queue.shift();
         spawnTrained(w, b, unitType);
+        if (b.queue.length === 0) b.progress = 1; // completed: training timer resets, building stays "done"
       }
       continue;
     }
@@ -74,6 +75,11 @@ export function updateConstruction(w: World, dt: number): void {
         b.progress = 1;
         b.hp = def.hp;
         sfx(w, "upgrade");
+        for (const e of w.entities.values()) {
+          if (e.kind === "unit" && e.type === "worker" && e.order && e.order.type === "build" && e.order.buildingId === b.id) {
+            e.order = null;
+          }
+        }
       }
     }
   }
