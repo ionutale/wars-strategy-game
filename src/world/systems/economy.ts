@@ -19,6 +19,11 @@ export function updateEconomy(w: World, dt: number): void {
     if (u.order && u.order.type === "gather") {
       const node = w.resources.get(u.order.resourceId);
       if (!node || node.amount <= 0) { u.order = null; u.path = null; continue; }
+      if (node.maxWorkers > 0 && workersOnNode(w, u, node.id) > node.maxWorkers) {
+        u.order = null;
+        u.path = null;
+        continue;
+      }
       if (u.cargo === 0) {
         if (atNode(u, node)) {
           const take = Math.min(node.amount, CARGO_CAPACITY);
@@ -46,6 +51,16 @@ export function updateEconomy(w: World, dt: number): void {
       }
     }
   }
+}
+
+function workersOnNode(w: World, self: Entity, resourceId: number): number {
+  let n = 0;
+  for (const e of w.entities.values()) {
+    if (e.kind === "unit" && e.type === "worker" && !e.dead && e.order && e.order.type === "gather" && e.order.resourceId === resourceId) {
+      n++;
+    }
+  }
+  return n;
 }
 
 function atNode(u: Entity, node: ResourceNode): boolean {

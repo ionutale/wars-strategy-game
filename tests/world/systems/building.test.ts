@@ -29,6 +29,18 @@ describe("building placement", () => {
     expect(w.pools.blue.gold).toBe(0);
     expect(w.pools.blue.wood).toBe(0);
   });
+
+  it("enforces tech gating on placement", () => {
+    const { w } = setup(); // blue town-hall at (8,8)
+    // blacksmith requires lumber-mill
+    expect(canPlace(w, "blacksmith", 20, 20, "blue")).toBe(false);
+    const mill = createEntity("building", "blue", "lumber-mill", 20, 20, 200);
+    mill.progress = 0.5; // under construction — still not enough
+    w.entities.set(mill.id, mill);
+    expect(canPlace(w, "blacksmith", 24, 24, "blue")).toBe(false);
+    mill.progress = 1;
+    expect(canPlace(w, "blacksmith", 24, 24, "blue")).toBe(true);
+  });
 });
 
 describe("construction", () => {

@@ -175,8 +175,9 @@ test.describe("building", () => {
       { label: "Tower", type: "tower", site: { x: 4.5, y: 10.5 } },
       { label: "Lumber Mill", type: "lumber-mill", site: { x: 2.5, y: 12.5 } },
       { label: "Blacksmith", type: "blacksmith", site: { x: 4.5, y: 14.5 } },
-      { label: "Stables", type: "stables", site: { x: 12.5, y: 10.5 } },
-      { label: "Church", type: "church", site: { x: 14.5, y: 12.5 } },
+      { label: "Castle", type: "castle", site: { x: 12.5, y: 10.5 } },
+      { label: "Stables", type: "stables", site: { x: 14.5, y: 12.5 } },
+      { label: "Church", type: "church", site: { x: 16.5, y: 14.5 } },
     ];
     // give plenty of resources for all of them
     await setPools(page, "blue", { gold: 5000, wood: 5000 });
@@ -189,17 +190,14 @@ test.describe("building", () => {
       await expect
         .poll(async () => (await snapshot(page)).entities.filter((e) => e.type === t.type && e.faction === "blue").length, { timeout: 5_000 })
         .toBe(1);
+      // complete the foundation instantly so gated buildings can be placed next
+      await page.evaluate((t) => {
+        const w = window.__wars!;
+        const b = [...w.session.world.entities.values()].find((e) => e.type === t && e.faction === "blue");
+        if (b) b.progress = 1;
+      }, t.type);
       void base;
     }
-    // castle requires lots of gold; place it too
-    await selectEntity(page, worker.id);
-    await clickButton(page, "Build");
-    await clickButton(page, "Castle");
-    const csite = await worldToScreen(page, 16.5, 10.5);
-    await tapCanvas(page, csite.x, csite.y);
-    await expect
-      .poll(async () => (await snapshot(page)).entities.filter((e) => e.type === "castle" && e.faction === "blue").length)
-      .toBe(1);
   });
 
   test("a built tower fires at enemies", async ({ page }) => {

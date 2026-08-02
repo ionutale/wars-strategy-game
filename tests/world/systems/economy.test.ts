@@ -57,4 +57,19 @@ describe("updateEconomy", () => {
     for (let i = 0; i < 60; i++) { updateMovement(w, 1 / 6); updateEconomy(w, 1 / 6); }
     expect(Math.hypot(worker.x - mine.x, worker.y - mine.y)).toBeLessThan(10);
   });
+
+  it("releases workers when a mine is at capacity", () => {
+    const { w, worker, mine } = setup();
+    mine.maxWorkers = 1;
+    const worker2 = createEntity("unit", "blue", "worker", 3, 3, 20);
+    w.entities.set(worker2.id, worker2);
+    orderGather(worker, mine.id);
+    orderGather(worker2, mine.id);
+    // both assigned; mine allows 1
+    updateEconomy(w, 0.1);
+    const stillGathering = [...w.entities.values()].filter(
+      (e) => e.type === "worker" && e.order && e.order.type === "gather",
+    ).length;
+    expect(stillGathering).toBe(1);
+  });
 });

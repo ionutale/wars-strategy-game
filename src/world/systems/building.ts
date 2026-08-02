@@ -12,6 +12,13 @@ export const WORK_BUILD_SPEED = 1; // progress per second per worker (build comp
 export function canPlace(w: World, type: string, tx: number, ty: number, faction: Entity["faction"]): boolean {
   const def = BUILDINGS[type];
   if (!def) return false;
+  // tech gating: all prerequisite buildings must be constructed
+  for (const req of def.requires) {
+    const has = [...w.entities.values()].some(
+      (e) => e.kind === "building" && e.faction === faction && e.type === req && !e.dead && e.progress >= 1,
+    );
+    if (!has) return false;
+  }
   const f = def.footprint;
   for (let x = tx; x < tx + f; x++) {
     for (let y = ty; y < ty + f; y++) {
