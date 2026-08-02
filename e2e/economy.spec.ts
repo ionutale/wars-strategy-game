@@ -63,14 +63,19 @@ test.describe("economy — worker inputs", () => {
     // both loads deposited: pool increases by the full 100
     await expect
       .poll(async () => (await snapshot(page)).pools.blue.wood, { timeout: 40_000 })
-      .toBe(wood0 + 100);
-    // worker is idle and NOT stranded carrying cargo
+      .toBeGreaterThanOrEqual(wood0 + 100);
+    // worker is NOT stranded carrying cargo; it keeps gathering from the
+    // next wood node (skirmish has a second wood node)
     const w2 = (await snapshot(page)).entities.find((e) => e.id === worker.id)!;
     expect(w2.cargo).toBe(0);
-    expect(w2.order).toBeNull();
+    expect(w2.order).toMatchObject({ type: "gather" });
+    const nodeId = (w2.order as { resourceId: number }).resourceId;
+    const node = (await snapshot(page)).resources.find((r) => r.id === nodeId)!;
+    expect(node.kind).toBe("wood");
+    expect(node.amount).toBeGreaterThan(0);
   });
 
-  test("gold mine depletion stops a gathering worker cleanly", async ({ page }) => {
+  test("gold mine depletion keeps a worker mining from the next mine", async ({ page }) => {
     await startSkirmish(page);
     const snap = await snapshot(page);
     const worker = snap.entities.find((e) => e.type === "worker" && e.faction === "blue")!;
@@ -82,12 +87,17 @@ test.describe("economy — worker inputs", () => {
     const gold0 = (await snapshot(page)).pools.blue.gold;
     await selectEntity(page, worker.id);
     await clickButton(page, "Gather Gold");
+    // the first mine's load lands and the worker keeps mining the next mine
     await expect
       .poll(async () => (await snapshot(page)).pools.blue.gold, { timeout: 40_000 })
-      .toBe(gold0 + 50);
+      .toBeGreaterThanOrEqual(gold0 + 100);
     const w2 = (await snapshot(page)).entities.find((e) => e.id === worker.id)!;
     expect(w2.cargo).toBe(0);
-    expect(w2.order).toBeNull();
+    expect(w2.order).toMatchObject({ type: "gather" });
+    const nodeId = (w2.order as { resourceId: number }).resourceId;
+    const node = (await snapshot(page)).resources.find((r) => r.id === nodeId)!;
+    expect(node.kind).toBe("gold");
+    expect(node.amount).toBeGreaterThan(0);
   });
 
   test("Stop command halts a gathering worker", async ({ page }) => {
@@ -197,4 +207,31 @@ test("Move button sends a gathering worker to a new location", async ({ page }) 
   // and it does NOT resume gathering on arrival (no gather order)
   const w2 = (await snapshot(page)).entities.find((x) => x.id === worker.id)!;
   expect(w2.order).toBeNull();
+});
+
+test("workers switch to another mine when the first depletes", async ({ page }) => {
+  await startSkirmish(page);
+  let snap = await snapshot(page);
+  const worker = snap.entities.find((e) => e.type === "worker" && e.faction === "blue")!;
+  // shrink the closest gold mine to a single load; another mine exists at (52,30)
+  await page.evaluate(() => {
+    const w = window.__wars!;
+    const gold = [...w.session.world.resources.values()]
+      .filter((r) => r.kind === "gold")
+      .sort((a, b) => a.x + a.y - (b.x + b.y))[0];
+    if (gold) gold.amount = 50;
+  });
+  await selectEntity(page, worker.id);
+  await clickButton(page, "Gather Gold");
+  const gold0 = (await snapshot(page)).pools.blue.gold;
+  // first mine's load lands, then the worker keeps mining from another node
+  await expect
+    .poll(async () => (await snapshot(page)).pools.blue.gold, { timeout: 60_000 })
+    .toBeGreaterThanOrEqual(gold0 + 100); // 50 from the shrunken mine + 50+ from the next
+  // the worker's order points at a gold node with remaining amount
+  const w2 = (await snapshot(page)).entities.find((x) => x.id === worker.id)!;
+  expect(w2.order).toMatchObject({ type: "gather" });
+  const nodeId = (w2.order as { resourceId: number }).resourceId;
+  const node = (await snapshot(page)).resources.find((r) => r.id === nodeId)!;
+  expect(node.kind).toBe("gold");
 });

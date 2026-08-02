@@ -67,3 +67,10 @@ test.describe("main menu and game start", () => {
     }
   });
 });
+
+test("timer shows elapsed game time", async ({ page }) => {
+  await startSkirmish(page);
+  await expect(page.locator(".hud-top .time")).toHaveText(/^\d+:\d{2}$/);
+  const t0 = await page.locator(".hud-top .time").textContent();
+  await expect.poll(async () => page.locator(".hud-top .time").textContent(), { timeout: 5_000 }).not.toBe(t0);
+});

@@ -28,7 +28,7 @@ export function updateEconomy(w: World, dt: number): void {
         if (u.order && u.order.type === "gather") {
           const node = w.resources.get(u.order.resourceId);
           if (node && node.amount > 0) setPath(u, { x: node.x, y: node.y }, w.map);
-          else { u.order = null; u.path = null; }
+          else reassignGather(w, u); // node depleted — move to the next one
         }
       } else if (!u.path || u.path.length === 0) {
         if (depot) setPath(u, { x: depot.x, y: depot.y }, w.map);
@@ -39,7 +39,12 @@ export function updateEconomy(w: World, dt: number): void {
     // 2) gather order
     if (u.order && u.order.type === "gather") {
       const node = w.resources.get(u.order.resourceId);
-      if (!node || node.amount <= 0) { u.order = null; u.path = null; continue; }
+      if (!node || node.amount <= 0) {
+        // the node is exhausted — switch to the next available node of the
+        // same kind instead of idling forever
+        reassignGather(w, u);
+        continue;
+      }
       if (node.maxWorkers > 0 && workersOnNode(w, u, node.id) > node.maxWorkers) {
         u.order = null;
         u.path = null;
@@ -53,11 +58,33 @@ export function updateEconomy(w: World, dt: number): void {
         sfx(w, "gather");
         const depot = nearestDepot(w, u);
         if (depot) setPath(u, { x: depot.x, y: depot.y }, w.map);
-        if (node.amount <= 0) u.order = null; // deliver this final load, then stop
+        // if the node depleted, the deposit handler reassigns to the next one
       } else if (!u.path || u.path.length === 0) {
         setPath(u, { x: node.x, y: node.y }, w.map);
       }
     }
+  }
+}
+
+/** Point the worker at the nearest node of the same kind as its current order, or idle if none. */
+function reassignGather(w: World, u: Entity): void {
+  const current = u.order;
+  if (!current || current.type !== "gather") { u.order = null; u.path = null; return; }
+  const oldNode = w.resources.get(current.resourceId);
+  const kind = oldNode?.kind ?? "gold";
+  let best: ResourceNode | null = null;
+  let bestD = Infinity;
+  for (const r of w.resources.values()) {
+    if (r.kind !== kind || r.amount <= 0 || r.id === current.resourceId) continue;
+    const d = Math.hypot(r.x - u.x, r.y - u.y);
+    if (d < bestD) { bestD = d; best = r; }
+  }
+  if (best) {
+    u.order = { type: "gather", resourceId: best.id };
+    u.path = null;
+  } else {
+    u.order = null;
+    u.path = null;
   }
 }
 

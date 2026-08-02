@@ -18,7 +18,7 @@ injectStyles(`
   .hud-root > * { pointer-events: auto; }
   .hud-top { position: absolute; top: 8px; left: 8px; right: 8px; display: flex; gap: 10px; align-items: center; background: rgba(0,0,0,.6); border-radius: 6px; padding: 6px 10px; font-size: 14px; }
   .hud-top .spacer { flex: 1; }
-  .hud-top .gold { color: #d4af37; } .hud-top .wood { color: #8b5a2b; } .hud-top .food { color: #86efac; }
+  .hud-top .gold { color: #d4af37; } .hud-top .wood { color: #8b5a2b; } .hud-top .food { color: #86efac; } .hud-top .time { color: #e8f5e0; }
   .hud-btn { background: #3d4a3a; border: 1px solid #7a8a70; color: #e8f5e0; border-radius: 5px; padding: 6px 10px; font-size: 13px; font-family: monospace; display: flex; flex-direction: column; align-items: center; gap: 2px; }
   .hud-btn .btn-label { line-height: 1.1; }
   .hud-btn .btn-cost { font-size: 10px; color: #d4af37; opacity: 0.9; }
@@ -51,6 +51,7 @@ export class Hud {
   update(world: World, selected: Entity[]): void {
     this.top.innerHTML = "";
     this.top.append(
+      span("time", formatTime(world.time)),
       span("gold", `Gold ${world.pools.blue.gold}`),
       span("wood", `Wood ${world.pools.blue.wood}`),
       span("food", `Food ${foodUsed(world, "blue")}/${world.foodCap.blue}`),
@@ -138,6 +139,14 @@ export class Hud {
 function span(cls: string, text: string): HTMLSpanElement {
   const s = el("span", cls, text);
   return s;
+}
+
+/** Format elapsed game seconds as mm:ss (e.g. 125s -> "2:05"). */
+function formatTime(seconds: number): string {
+  const s = Math.max(0, Math.floor(seconds));
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return `${m}:${r.toString().padStart(2, "0")}`;
 }
 
 /** Render a command button with an optional two-line cost (label over cost). */

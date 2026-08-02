@@ -39,12 +39,18 @@ describe("updateEconomy", () => {
   });
 
   it("depletes the node and stops gathering", () => {
-    const { w, worker, mine } = setup();
+    const { w, worker, mine, hall } = setup();
     mine.amount = 10;
     orderGather(worker, mine.id);
     worker.x = mine.x; worker.y = mine.y;
     updateEconomy(w, 1);
     expect(mine.amount).toBe(0);
+    // the final load is still carried (delivered at the depot), and once
+    // deposited with no other gold node left, the worker idles
+    expect(worker.cargo).toBe(10);
+    worker.x = hall.x; worker.y = hall.y;
+    updateEconomy(w, 1);
+    expect(worker.cargo).toBe(0);
     expect(worker.order).toBeNull();
   });
 
@@ -71,5 +77,28 @@ describe("updateEconomy", () => {
       (e) => e.type === "worker" && e.order && e.order.type === "gather",
     ).length;
     expect(stillGathering).toBe(1);
+  });
+});
+
+describe("mine switching", () => {
+  it("switches to another gold node when the first depletes", () => {
+    const w = createWorld(40, 40);
+    const worker = createEntity("unit", "blue", "worker", 2, 2, 20);
+    const hall = createEntity("building", "blue", "town-hall", 8, 2, 200);
+    const mine1 = createGoldMine(20, 20, 50); // one load
+    const mine2 = createGoldMine(30, 20, 100);
+    w.entities.set(worker.id, worker);
+    w.entities.set(hall.id, hall);
+    w.resources.set(mine1.id, mine1);
+    w.resources.set(mine2.id, mine2);
+    orderGather(worker, mine1.id);
+    // walk to mine1, take the only load, deposit it, then reassign to mine2
+    for (let i = 0; i < 600; i++) {
+      updateMovement(w, 1 / 60);
+      updateEconomy(w, 1 / 60);
+    }
+    expect(worker.order).toMatchObject({ type: "gather", resourceId: mine2.id });
+    expect(mine1.amount).toBe(0);
+    expect(mine2.amount).toBe(100);
   });
 });
