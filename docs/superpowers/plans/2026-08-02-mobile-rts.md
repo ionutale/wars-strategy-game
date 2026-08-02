@@ -813,7 +813,7 @@ export function findPath(map: MapData, from: Vec2, to: Vec2): Vec2[] | null {
       const path: Vec2[] = [];
       let node: { x: number; y: number } | null = cur;
       while (node) {
-        path.unshift({ x: node.x + 0.5, y: node.y + 0.5 });
+        path.unshift({ x: node.x, y: node.y });
         node = cameFrom.get(key(node.x, node.y)) ?? null;
       }
       return path;
