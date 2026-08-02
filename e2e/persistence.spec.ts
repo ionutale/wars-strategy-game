@@ -82,4 +82,16 @@ test.describe("persistence", () => {
       .poll(async () => (await fetchProgress(id)).skirmish.wins, { timeout: 10_000 })
       .toBe(before.wins + 1);
   });
+
+  test("menu displays saved stats after a win", async ({ page }) => {
+    await startSkirmish(page);
+    const id = await playerId(page);
+    const before = (await fetchProgress(id)).skirmish;
+    await killAllBuildings(page, "red");
+    await expect(page.getByRole("heading", { name: "VICTORY" })).toBeVisible({ timeout: 15_000 });
+    await expect.poll(async () => (await fetchProgress(id)).skirmish.wins, { timeout: 10_000 }).toBe(before.wins + 1);
+    await clickButton(page, "Main Menu");
+    await expect(page.getByRole("heading", { name: "WARS" })).toBeVisible();
+    await expect(page.locator(".menu-stats")).toContainText(`${before.wins + 1}W`);
+  });
 });

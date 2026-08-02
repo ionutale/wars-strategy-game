@@ -1,13 +1,14 @@
 import { GameLoop } from "./core/loop";
 import { Camera } from "./core/camera";
-import { render } from "./render/renderer";
+import { render, renderBuildPreview } from "./render/renderer";
 import { Hud } from "./ui/hud";
 import { Minimap } from "./ui/minimap";
-import { showMainMenu, showEndScreen } from "./ui/screens";
+import { showMainMenu, showEndScreen, showMissionIntro, showPauseOverlay } from "./ui/screens";
 import { createSession, startCampaign, startSkirmish, handleCommand, Session } from "./state/session";
 import { tickWorld } from "./state/update";
 import { moveTo } from "./world/systems/movement";
 import { orderAttack } from "./world/systems/combat";
+import { canPlace } from "./world/systems/building";
 import { sfx } from "./world/world";
 import type { CommandName } from "./ui/hud";
 import { MISSIONS } from "./content/missions";
@@ -57,6 +58,7 @@ let commandMode: "none" | "build" = "none";
 let buildType = "farm";
 let needsTarget: "attack" | "move" | null = null;
 let outcomeSent = false;
+let preview: { tx: number; ty: number; valid: boolean } | null = null;
 
 canvas.addEventListener("pointerdown", (ev) => {
   pointers.set(ev.pointerId, { startX: ev.clientX, startY: ev.clientY, lastX: ev.clientX, lastY: ev.clientY });
@@ -92,6 +94,12 @@ canvas.addEventListener("pointermove", (ev) => {
       cam.panScreen(dx, dy);
       cam.clampToMap(session.world.map.w, session.world.map.h);
     }
+    if (commandMode === "build") {
+      const wp = cam.screenToWorld(ev.clientX, ev.clientY);
+      const tx = Math.floor(wp.x - 0.5);
+      const ty = Math.floor(wp.y - 0.5);
+      preview = { tx, ty, valid: canPlace(session.world, buildType, tx, ty, "blue") };
+    }
   }
   p.lastX = ev.clientX;
   p.lastY = ev.clientY;
@@ -120,6 +128,7 @@ function handleTap(sx: number, sy: number): void {
       session.placement = { tx, ty };
       handleCommand(session, `build-${buildType}` as CommandName, worker);
       commandMode = "none";
+      preview = null;
     }
     return;
   }
@@ -177,6 +186,7 @@ const hud = new Hud({
     if (cmd.startsWith("build-")) {
       buildType = cmd.replace("build-", "");
       commandMode = "build";
+      preview = null;
       session.placement = null;
       return;
     }
@@ -189,7 +199,15 @@ const hud = new Hud({
       if (ent.kind === "unit" && ent.faction === "blue" && ent.type !== "worker" && !ent.dead) session.selected.add(ent.id);
     }
   },
-  onPause: () => { /* pause via loop stop in v1 */ },
+  onPause: () => {
+    if (session.state !== "playing") return;
+    if (paused) resumeGame();
+    else {
+      paused = true;
+      loop.stop();
+      pauseCleanup = showPauseOverlay(resumeGame);
+    }
+  },
 });
 
 const minimap = new Minimap(cam, (fx, fy) => {
@@ -209,13 +227,26 @@ const loop = new GameLoop({
       render(session.world, cam, ctx, session.selected);
       minimap.draw(session.world);
     }
+    if (preview && commandMode === "build") {
+      renderBuildPreview(session.world, cam, ctx, buildType, preview.tx, preview.ty, preview.valid);
+    }
     const sel = [...session.selected].map((id) => session.world.entities.get(id)).filter(Boolean) as import("./world/entity").Entity[];
     hud.update(session.world, sel);
   },
 });
 
+let paused = false;
+let pauseCleanup: (() => void) | null = null;
+function resumeGame(): void {
+  paused = false;
+  pauseCleanup?.();
+  pauseCleanup = null;
+  loop.start();
+}
+
 // --- menu wiring ---
 let endCleanup: (() => void) | null = null;
+let introCleanup: (() => void) | null = null;
 
 /** Fit the whole map in the viewport after starting a game. */
 function fitCameraToMap(): void {
@@ -227,14 +258,20 @@ function fitCameraToMap(): void {
 }
 
 let menuCleanup: (() => void) | null = null;
-menuCleanup = showMainMenu({
+let menuSetStats: ((s: { wins: number; losses: number; campaign: Record<string, string> }) => void) | null = null;
+const menu = showMainMenu({
   onCampaign: () => {
     startMusic();
     startCampaign(session);
     fitCameraToMap();
     if (endCleanup) endCleanup();
     menuCleanup?.();
-    loop.start();
+    // intro overlay: game loop starts when the player dismisses it
+    const m = session.mission!;
+    introCleanup = showMissionIntro(m.title, m.intro, () => {
+      introCleanup?.();
+      loop.start();
+    });
   },
   onSkirmish: (d) => {
     startMusic();
@@ -244,6 +281,11 @@ menuCleanup = showMainMenu({
     menuCleanup?.();
     loop.start();
   },
+});
+menuCleanup = menu.cleanup;
+menuSetStats = menu.setStats;
+void loadProgress().then((p) => {
+  if (p && menuSetStats) menuSetStats({ wins: p.skirmish.wins, losses: p.skirmish.losses, campaign: p.campaign });
 });
 
 // --- victory/defeat polling ---

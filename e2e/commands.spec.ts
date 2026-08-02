@@ -125,4 +125,18 @@ test.describe("command bar", () => {
       .poll(async () => (await snapshot(page)).entities.find((x) => x.id === footman)!.order)
       .toMatchObject({ type: "attack" });
   });
+
+  test("pause freezes the game and resume continues", async ({ page }) => {
+    await startSkirmish(page);
+    await expect.poll(async () => (await snapshot(page)).time).toBeGreaterThan(1);
+    const t0 = (await snapshot(page)).time;
+    await clickButton(page, "⏸");
+    await expect(page.getByRole("heading", { name: "PAUSED" })).toBeVisible();
+    await page.waitForTimeout(1200);
+    const t1 = (await snapshot(page)).time;
+    expect(t1).toBeCloseTo(t0, 0); // frozen
+    await clickButton(page, "Resume");
+    await expect(page.getByRole("heading", { name: "PAUSED" })).toHaveCount(0);
+    await expect.poll(async () => (await snapshot(page)).time, { timeout: 10_000 }).toBeGreaterThan(t1 + 1);
+  });
 });

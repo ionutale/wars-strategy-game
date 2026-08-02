@@ -3,6 +3,7 @@ import type { Camera } from "../core/camera";
 import { PX_PER_TILE } from "../core/camera";
 import { drawBuilding, drawUnit } from "./sprites";
 import { BUILDINGS } from "../world/systems/building";
+import { UNIT_DEFS } from "../content/units";
 
 /** Pixels per tile on screen at the current zoom. */
 function S(cam: Camera): number {
@@ -28,6 +29,10 @@ export function render(world: World, cam: Camera, ctx: CanvasRenderingContext2D,
     }
     if (selected.has(e.id)) drawSelection(ctx, s.x, s.y, (e.kind === "building" ? 1.3 : 0.9) * pxPerTile);
     if (e.hp < e.maxHp) drawHpBar(ctx, s.x, s.y, e.hp / e.maxHp, (e.kind === "building" ? 2.2 : 1) * pxPerTile);
+    if (selected.has(e.id)) {
+      const range = e.kind === "unit" ? UNIT_DEFS[e.type].range : BUILDINGS[e.type].canAttack ? BUILDINGS[e.type].range : 0;
+      if (range > 1.2) drawRangeRing(ctx, s.x, s.y, range * pxPerTile);
+    }
   }
   for (const p of world.entities.values()) {
     if (p.kind !== "projectile" || p.dead) continue;
@@ -38,6 +43,29 @@ export function render(world: World, cam: Camera, ctx: CanvasRenderingContext2D,
     ctx.arc(s.x, s.y, (splash ? 0.18 : 0.09) * pxPerTile, 0, Math.PI * 2);
     ctx.fill();
   }
+}
+
+function drawRangeRing(ctx: CanvasRenderingContext2D, x: number, y: number, r: number): void {
+  ctx.fillStyle = "rgba(155,224,255,0.10)";
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(155,224,255,0.45)";
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.stroke();
+}
+
+export function renderBuildPreview(world: World, cam: Camera, ctx: CanvasRenderingContext2D, type: string, tx: number, ty: number, valid: boolean): void {
+  const def = BUILDINGS[type];
+  const p = cam.worldToScreen(tx, ty);
+  const size = def.footprint * PX_PER_TILE * cam.zoom;
+  ctx.save();
+  ctx.globalAlpha = 0.35;
+  ctx.fillStyle = valid ? "#4ade80" : "#ef4444";
+  ctx.fillRect(p.x, p.y, size, size);
+  ctx.restore();
 }
 
 function drawTerrain(world: World, cam: Camera, ctx: CanvasRenderingContext2D): void {

@@ -107,6 +107,10 @@ export async function startCampaignAt(page: Page, missionIndex: number): Promise
     window.__wars!.session.missionIndex = idx;
   }, missionIndex);
   await page.getByRole("button", { name: "Campaign" }).click();
+  const begin = page.getByRole("button", { name: "Begin" });
+  if (await begin.isVisible().catch(() => false)) {
+    await begin.click();
+  }
   await expect.poll(() => snapshot(page).then((s) => s.state)).toBe("playing");
 }
 

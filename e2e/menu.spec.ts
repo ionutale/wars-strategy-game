@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { clickButton, snapshot, startCampaignAt, startSkirmish } from "./helpers";
+import { snapshot, startCampaignAt, startSkirmish } from "./helpers";
 
 test.describe("main menu and game start", () => {
   test("menu shows title and all start options", async ({ page }) => {
@@ -13,7 +13,10 @@ test.describe("main menu and game start", () => {
 
   test("campaign starts mission 1 in playing state", async ({ page }) => {
     await page.goto("/");
-    await clickButton(page, "Campaign");
+    await page.getByRole("button", { name: "Campaign" }).click();
+    // mission intro overlay shows; dismiss it to start the game loop
+    await expect(page.getByRole("heading", { name: "First Steps" })).toBeVisible();
+    await page.getByRole("button", { name: "Begin" }).click();
     const snap = await snapshot(page);
     expect(snap.state).toBe("playing");
     expect(snap.mode).toBe("campaign");
