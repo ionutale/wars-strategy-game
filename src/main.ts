@@ -108,8 +108,7 @@ function handleTap(sx: number, sy: number): void {
           e.order = { type: "attack", targetId: hit.id };
           e.targetId = hit.id;
         } else {
-          e.order = { type: "attackMove", x: worldPt.x, y: worldPt.y };
-          e.path = null;
+          moveTo(e, { x: worldPt.x, y: worldPt.y }, w.map);
         }
       } else {
         if (hit && hit.faction === e.faction) { /* ignore friendly */ }
