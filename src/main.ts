@@ -11,7 +11,7 @@ import { sfx } from "./world/world";
 import type { CommandName } from "./ui/hud";
 import { MISSIONS } from "./content/missions";
 import { saveProgress, loadProgress } from "./net/api";
-import { startMusic } from "./audio/audio";
+import { startMusic, playSfx } from "./audio/audio";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d")!;
@@ -228,7 +228,7 @@ setInterval(() => {
       })();
     }
     loop.stop();
-    sfx(session.world, session.state === "victory" ? "victory" : "defeat");
+    playSfx(session.state === "victory" ? "victory" : "defeat");
     const title = session.state === "victory" ? "VICTORY" : "DEFEAT";
     const wasVictory = session.state === "victory";
     endCleanup = showEndScreen(title, "", () => {
