@@ -34,8 +34,8 @@ export function createProgressRouter(db: Db): ProgressRouter {
       return { playerId: doc.playerId, campaign: doc.campaign, skirmish: doc.skirmish };
     },
     async handleSaveProgress(req) {
-      const { playerId } = req.body;
-      if (!playerId) return { ok: false };
+      const { playerId } = req.body ?? {};
+      if (typeof playerId !== "string" || !playerId) return { ok: false };
       const existing = await getOrCreate(playerId);
       await col.updateOne(
         { playerId },
