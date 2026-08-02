@@ -7,6 +7,7 @@ import { showMainMenu, showEndScreen } from "./ui/screens";
 import { createSession, startCampaign, startSkirmish, handleCommand, Session } from "./state/session";
 import { tickWorld } from "./state/update";
 import { moveTo } from "./world/systems/movement";
+import { sfx } from "./world/world";
 import type { CommandName } from "./ui/hud";
 import { MISSIONS } from "./content/missions";
 import { saveProgress, loadProgress } from "./net/api";
@@ -128,7 +129,10 @@ function handleTap(sx: number, sy: number): void {
   const hit = pickEntity(worldPt.x, worldPt.y);
   session.selected.clear();
   if (hit) {
-    if (hit.faction === "blue") session.selected.add(hit.id);
+    if (hit.faction === "blue") {
+      session.selected.add(hit.id);
+      sfx(session.world, "select");
+    }
   }
 }
 
@@ -224,6 +228,7 @@ setInterval(() => {
       })();
     }
     loop.stop();
+    sfx(session.world, session.state === "victory" ? "victory" : "defeat");
     const title = session.state === "victory" ? "VICTORY" : "DEFEAT";
     const wasVictory = session.state === "victory";
     endCleanup = showEndScreen(title, "", () => {
