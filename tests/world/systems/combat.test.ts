@@ -50,4 +50,24 @@ describe("updateCombat", () => {
     tick(w);
     expect(b.hp).toBe(hpAfterFirst); // still cooling down
   });
+
+  it("does not retaliate against a projectile (hold stance survives)", () => {
+    const { w, a, b } = setup();
+    b.order = { type: "hold" };
+    // archer range 7: can hit b from outside hold auto-acquire range (6), so b's
+    // hold stance isn't converted to an attack order before the projectile lands
+    const archerStats: UnitStats = { hp: 25, attack: 6, range: 7, attackSpeed: 1, armor: 0 };
+    b.x = 12;
+    a.order = { type: "attack", targetId: b.id };
+    // fire a ranged shot from a (uses projectile), then advance it onto b
+    updateCombat(w, 1 / 60, (e) => (e.id === a.id ? archerStats : FOOTMAN));
+    const proj = [...w.entities.values()].find((e) => e.kind === "projectile");
+    expect(proj).toBeDefined();
+    // simulate projectile arrival
+    proj!.x = b.x;
+    proj!.y = b.y;
+    updateCombat(w, 1 / 60, (e) => (e.id === a.id ? archerStats : FOOTMAN));
+    expect(b.hp).toBeLessThan(40); // took the hit
+    expect(b.order).toEqual({ type: "hold" }); // stance preserved, no attack order on projectile
+  });
 });

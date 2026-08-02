@@ -110,8 +110,8 @@ export function applyDamage(t: Entity, amount: number, attacker: Entity, w: Worl
   } else {
     sfx(w, "hit");
   }
-  // retaliate: idle unit attacked while not on stop
-  if (t.kind === "unit" && !t.dead && !(t.order && t.order.type === "stop")) {
+  // retaliate: idle unit attacked while not on stop; projectiles don't count as targets
+  if (t.kind === "unit" && !t.dead && attacker.kind !== "projectile" && !(t.order && t.order.type === "stop")) {
     if (!(t.order && t.order.type === "attack")) {
       t.order = { type: "attack", targetId: attacker.id };
     }
