@@ -23,7 +23,7 @@ injectStyles(`
   .hud-panel { position: absolute; left: 8px; bottom: 64px; background: rgba(0,0,0,.7); border-radius: 6px; padding: 8px 10px; font-size: 12px; min-width: 160px; }
   .hud-panel h3 { margin: 0 0 4px; font-size: 13px; }
   .hud-panel .row { display: flex; justify-content: space-between; gap: 12px; }
-  .hud-queue { position: absolute; right: 8px; bottom: 64px; background: rgba(0,0,0,.7); border-radius: 6px; padding: 6px; display: flex; gap: 4px; }
+  .hud-queue { position: absolute; right: 8px; bottom: 110px; background: rgba(0,0,0,.7); border-radius: 6px; padding: 6px; display: flex; gap: 4px; }
   .hud-queue .q-item { background: #2a3328; border: 1px solid #55604f; border-radius: 3px; padding: 4px 6px; font-size: 10px; }
   .hud-select-all { position: absolute; top: 52px; right: 8px; }
   .hud-pause { position: absolute; top: 52px; right: 8px; margin-right: 90px; }

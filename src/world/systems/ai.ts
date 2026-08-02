@@ -27,7 +27,7 @@ export class AIController {
 
   get base(): Entity | null {
     for (const e of this.w.entities.values()) {
-      if (e.faction === this.faction && (e.type === "town-hall" || e.type === "castle")) return e;
+      if (e.faction === this.faction && !e.dead && (e.type === "town-hall" || e.type === "castle")) return e;
     }
     return null;
   }
