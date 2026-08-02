@@ -26,8 +26,10 @@ describe("updateMovement", () => {
   it("faces the direction of travel", () => {
     const { w, u } = setup();
     moveTo(u, { x: 5, y: 1 }, w.map);
-    updateMovement(w, 1);
+    updateMovement(w, 1 / 12); // half-tile step: partial move sets facing
     expect(Math.abs(Math.cos(u.facing) - 1)).toBeLessThan(0.01); // facing +x
+    expect(u.x).toBeGreaterThan(1);
+    expect(u.x).toBeLessThan(2);
   });
 
   it("respects blocked tiles via pathfinding", () => {
