@@ -9,6 +9,7 @@ import { tickWorld } from "./state/update";
 import { moveTo } from "./world/systems/movement";
 import type { CommandName } from "./ui/hud";
 import { MISSIONS } from "./content/missions";
+import { saveProgress, loadProgress } from "./net/api";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d")!;
@@ -31,6 +32,7 @@ let pinchStartDist = 0;
 let commandMode: "none" | "build" = "none";
 let buildType = "farm";
 let needsTarget: "attack" | "move" | null = null;
+let outcomeSent = false;
 
 canvas.addEventListener("pointerdown", (ev) => {
   pointers.set(ev.pointerId, { startX: ev.clientX, startY: ev.clientY, lastX: ev.clientX, lastY: ev.clientY });
@@ -204,6 +206,20 @@ showMainMenu({
 // --- victory/defeat polling ---
 setInterval(() => {
   if ((session.state === "victory" || session.state === "defeat") && !endCleanup) {
+    if (!outcomeSent && (session.state === "victory" || session.state === "defeat")) {
+      outcomeSent = true;
+      const wasVictory = session.state === "victory";
+      const wasCampaign = session.mode === "campaign";
+      void (async () => {
+        const prev = (await loadProgress()) ?? { campaign: {}, skirmish: { wins: 0, losses: 0 } };
+        if (wasVictory && wasCampaign) {
+          prev.campaign[`m${session.missionIndex + 1}`] = "won"; // m1..m5, missionIndex is 0-based
+        }
+        if (wasVictory) prev.skirmish.wins += 1;
+        else prev.skirmish.losses += 1;
+        void saveProgress(prev);
+      })();
+    }
     loop.stop();
     const title = session.state === "victory" ? "VICTORY" : "DEFEAT";
     const wasVictory = session.state === "victory";
