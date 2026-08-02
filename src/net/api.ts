@@ -1,4 +1,7 @@
-export const SAVE_URL = `${import.meta.env.VITE_API_URL ?? "http://localhost:3001"}/api/progress`;
+// In production the API is served same-origin by the Cloud Run service;
+// in local dev the Vite app runs on :5173 and the API on :3001.
+export const API_BASE = import.meta.env.VITE_API_URL ?? (import.meta.env.PROD ? "" : "http://localhost:3001");
+export const SAVE_URL = `${API_BASE}/api/progress`;
 
 export interface ProgressPayload {
   campaign: Record<string, string>;

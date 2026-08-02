@@ -1,5 +1,8 @@
 import express from "express";
 import cors from "cors";
+import { existsSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { connectDb, closeDb } from "./db";
 import { createProgressRouter } from "./routes";
 
@@ -27,6 +30,15 @@ async function main(): Promise<void> {
   app.post("/api/progress", async (req, res) => {
     res.json(await router.handleSaveProgress({ body: req.body }));
   });
+
+  // Serve the built game when it exists (Cloud Run single-service deployment).
+  const distDir = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "dist");
+  if (existsSync(distDir)) {
+    app.use(express.static(distDir));
+    app.get(/^\/(?!api\/).*/, (_req, res) => {
+      res.sendFile(join(distDir, "index.html"));
+    });
+  }
 
   app.listen(PORT, () => console.log(`server listening on :${PORT}`));
 
