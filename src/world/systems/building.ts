@@ -95,6 +95,7 @@ function spawnTrained(w: World, b: Entity, unitType: string): void {
 export function canTrain(w: World, b: Entity, unitType: string): boolean {
   const def = BUILDINGS[b.type];
   if (!def.trains.includes(unitType)) return false;
+  if (b.progress < 1) return false; // must be fully constructed before training
   const udef = UNIT_DEFS[unitType];
   const pool = w.pools[b.faction];
   if (pool.gold < udef.cost.gold || pool.wood < udef.cost.wood) return false;

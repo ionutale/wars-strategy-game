@@ -7,6 +7,7 @@ import { showMainMenu, showEndScreen } from "./ui/screens";
 import { createSession, startCampaign, startSkirmish, handleCommand, Session } from "./state/session";
 import { tickWorld } from "./state/update";
 import { moveTo } from "./world/systems/movement";
+import { orderAttack } from "./world/systems/combat";
 import { sfx } from "./world/world";
 import type { CommandName } from "./ui/hud";
 import { MISSIONS } from "./content/missions";
@@ -109,8 +110,7 @@ function handleTap(sx: number, sy: number): void {
       const e = w.entities.get(sel)!;
       if (needsTarget === "attack") {
         if (hit && hit.faction !== e.faction) {
-          e.order = { type: "attack", targetId: hit.id };
-          e.targetId = hit.id;
+          orderAttack(e, hit.id);
         } else {
           moveTo(e, { x: worldPt.x, y: worldPt.y }, w.map);
         }
@@ -118,7 +118,7 @@ function handleTap(sx: number, sy: number): void {
         if (hit && hit.faction === e.faction) { /* ignore friendly */ }
         else {
           moveTo(e, { x: worldPt.x, y: worldPt.y }, w.map);
-          if (hit && hit.faction !== e.faction) e.order = { type: "attack", targetId: hit.id };
+          if (hit && hit.faction !== e.faction) orderAttack(e, hit.id);
         }
       }
     }
@@ -219,11 +219,13 @@ setInterval(() => {
       const wasCampaign = session.mode === "campaign";
       void (async () => {
         const prev = (await loadProgress()) ?? { campaign: {}, skirmish: { wins: 0, losses: 0 } };
-        if (wasVictory && wasCampaign) {
-          prev.campaign[`m${session.missionIndex + 1}`] = "won"; // m1..m5, missionIndex is 0-based
+        if (wasCampaign) {
+          if (wasVictory) prev.campaign[`m${session.missionIndex + 1}`] = "won"; // m1..m5, missionIndex is 0-based
+        } else if (wasVictory) {
+          prev.skirmish.wins += 1;
+        } else {
+          prev.skirmish.losses += 1;
         }
-        if (wasVictory) prev.skirmish.wins += 1;
-        else prev.skirmish.losses += 1;
         void saveProgress(prev);
       })();
     }
@@ -234,6 +236,7 @@ setInterval(() => {
     endCleanup = showEndScreen(title, "", () => {
       endCleanup?.();
       endCleanup = null;
+      outcomeSent = false;
       if (wasVictory && session.mode === "campaign" && session.missionIndex + 1 < MISSIONS.length) {
         session.missionIndex++;
         startCampaign(session);

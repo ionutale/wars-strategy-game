@@ -11,6 +11,8 @@ function setup() {
   const w = createWorld(60, 60);
   const hall = createEntity("building", "red", "town-hall", 50, 50, 300);
   const enemyHall = createEntity("building", "blue", "town-hall", 10, 10, 300);
+  hall.progress = 1; // completed
+  enemyHall.progress = 1;
   w.entities.set(hall.id, hall);
   w.entities.set(enemyHall.id, enemyHall);
   const mine = createGoldMine(44, 50);

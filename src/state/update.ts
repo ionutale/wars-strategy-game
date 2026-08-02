@@ -36,6 +36,10 @@ export function tickWorld(s: Session, dt: number): void {
   // cleanup
   for (const e of [...w.entities.values()]) {
     if (e.dead) {
+      if (e.kind === "building") {
+        const def = BUILDINGS[e.type];
+        if (def) w.foodCap[e.faction] = Math.max(0, w.foodCap[e.faction] - def.foodBonus);
+      }
       w.entities.delete(e.id);
       s.selected.delete(e.id);
     }

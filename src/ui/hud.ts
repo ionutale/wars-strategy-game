@@ -35,6 +35,7 @@ export class Hud {
   private panel: HTMLDivElement | null = null;
   private queue: HTMLDivElement | null = null;
   private commandBar = el("div", "hud-commandbar");
+  private buildOpen = false;
   private selectAllBtn = button("⚔ All", () => this.actions.onSelectAll(), "hud-btn hud-select-all");
   private pauseBtn = button("⏸", () => this.actions.onPause(), "hud-btn hud-pause");
 
@@ -83,11 +84,23 @@ export class Hud {
 
   private unitBar(e: Entity): void {
     if (e.type === "worker") {
-      this.addBtn("Build", "build-farm", e);
-      this.addBtn("Gather Gold", "gather-gold", e);
-      this.addBtn("Gather Wood", "gather-wood", e);
-      this.addBtn("Stop", "stop", e);
-      this.addBtn("Hold", "hold", e);
+      if (this.buildOpen) {
+        this.addBtn("Farm", "build-farm", e);
+        this.addBtn("Barracks", "build-barracks", e);
+        this.addBtn("Tower", "build-tower", e);
+        this.addBtn("Lumber Mill", "build-lumber-mill", e);
+        this.addBtn("Blacksmith", "build-blacksmith", e);
+        this.addBtn("Stables", "build-stables", e);
+        this.addBtn("Church", "build-church", e);
+        this.addBtn("Castle", "build-castle", e);
+        this.addToggleBtn("Cancel");
+      } else {
+        this.addToggleBtn("Build");
+        this.addBtn("Gather Gold", "gather-gold", e);
+        this.addBtn("Gather Wood", "gather-wood", e);
+        this.addBtn("Stop", "stop", e);
+        this.addBtn("Hold", "hold", e);
+      }
     } else {
       this.addBtn("Attack", "attack", e);
       this.addBtn("Move", "move", e);
@@ -105,7 +118,14 @@ export class Hud {
   }
 
   private addBtn(label: string, cmd: CommandName, e: Entity): void {
-    this.commandBar.appendChild(button(label, () => this.actions.onCommand(cmd, e)));
+    this.commandBar.appendChild(button(label, () => {
+      this.actions.onCommand(cmd, e);
+      if (cmd.startsWith("build-")) this.buildOpen = false;
+    }));
+  }
+
+  private addToggleBtn(label: string): void {
+    this.commandBar.appendChild(button(label, () => { this.buildOpen = !this.buildOpen; }));
   }
 }
 

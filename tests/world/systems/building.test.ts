@@ -6,6 +6,7 @@ import { canPlace, placeFoundation, updateConstruction, trainQueue, canTrain, BU
 function setup() {
   const w = createWorld(40, 40);
   const hall = createEntity("building", "blue", "town-hall", 8, 8, 200);
+  hall.progress = 1; // completed
   w.entities.set(hall.id, hall);
   return { w, hall };
 }
@@ -56,5 +57,16 @@ describe("training", () => {
     expect(w.pools.blue.gold).toBeLessThan(1000);
     updateConstruction(w, 0.01); // one tick of training
     expect(hall.progress).toBeGreaterThan(0);
+  });
+
+  it("does not train on an unfinished building", () => {
+    const { w, hall } = setup();
+    const barracks = createEntity("building", "blue", "barracks", 3, 3, 250);
+    barracks.progress = 0.3; // under construction
+    w.entities.set(barracks.id, barracks);
+    w.pools.blue.gold = 1000; w.pools.blue.wood = 500;
+    expect(canTrain(w, barracks, "footman")).toBe(false);
+    barracks.progress = 1;
+    expect(canTrain(w, barracks, "footman")).toBe(true);
   });
 });

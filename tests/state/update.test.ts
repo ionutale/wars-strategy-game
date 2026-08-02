@@ -38,4 +38,14 @@ describe("tickWorld", () => {
     for (let i = 0; i < 60 * 5; i++) tickWorld(s, 1 / 60);
     expect(s.state).toBe("victory");
   });
+
+  it("releases food cap when a farm is destroyed", () => {
+    const s = createSession();
+    startMission(s, MISSIONS[0]);
+    const capBefore = s.world.foodCap.blue;
+    const farm = [...s.world.entities.values()].find((e) => e.type === "farm" && e.faction === "blue")!;
+    farm.dead = true;
+    tickWorld(s, 1 / 60);
+    expect(s.world.foodCap.blue).toBe(capBefore - 4);
+  });
 });
