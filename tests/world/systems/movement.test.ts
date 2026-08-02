@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createWorld } from "../../../src/world/world";
 import { createEntity } from "../../../src/world/entity";
-import { updateMovement, moveTo } from "../../../src/world/systems/movement";
+import { updateMovement, moveTo, setPath } from "../../../src/world/systems/movement";
 
 function setup() {
   const w = createWorld(30, 30);
@@ -38,5 +38,22 @@ describe("updateMovement", () => {
     moveTo(u, { x: 5, y: 1 }, w.map);
     updateMovement(w, 20);
     expect(u.x).toBeCloseTo(5, 0);
+  });
+
+  it("setPath moves a unit without touching its order", () => {
+    const { w, u } = setup();
+    u.order = { type: "gather", resourceId: 7 };
+    setPath(u, { x: 5, y: 1 }, w.map);
+    expect(u.path).not.toBeNull();
+    expect(u.order).toEqual({ type: "gather", resourceId: 7 });
+  });
+
+  it("keeps non-move orders on arrival", () => {
+    const { w, u } = setup();
+    u.order = { type: "hold" };
+    setPath(u, { x: 1.4, y: 1 }, w.map); // short path
+    updateMovement(w, 10); // finish
+    expect(u.path).toBeNull();
+    expect(u.order).toEqual({ type: "hold" });
   });
 });
