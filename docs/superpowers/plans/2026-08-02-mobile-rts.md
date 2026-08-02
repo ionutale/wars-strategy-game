@@ -2229,8 +2229,8 @@ export class Hud {
   update(world: World, selected: Entity[]): void {
     this.top.innerHTML = "";
     this.top.append(
-      span("gold", `Gold ${world.gold}`),
-      span("wood", `Wood ${world.wood}`),
+      span("gold", `Gold ${world.pools.blue.gold}`),
+      span("wood", `Wood ${world.pools.blue.wood}`),
       span("food", `Food ${foodUsed(world, "blue")}/${world.foodCap.blue}`),
     );
     const spacer = el("span", "spacer");
