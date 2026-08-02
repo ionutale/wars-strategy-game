@@ -10,6 +10,7 @@ import { moveTo } from "./world/systems/movement";
 import type { CommandName } from "./ui/hud";
 import { MISSIONS } from "./content/missions";
 import { saveProgress, loadProgress } from "./net/api";
+import { startMusic } from "./audio/audio";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d")!;
@@ -192,11 +193,13 @@ const loop = new GameLoop({
 let endCleanup: (() => void) | null = null;
 showMainMenu({
   onCampaign: () => {
+    startMusic();
     startCampaign(session);
     if (endCleanup) endCleanup();
     loop.start();
   },
   onSkirmish: (d) => {
+    startMusic();
     startSkirmish(session, d);
     if (endCleanup) endCleanup();
     loop.start();

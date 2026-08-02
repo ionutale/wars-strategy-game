@@ -8,6 +8,8 @@ import { UNIT_DEFS } from "../content/units";
 import { BUILDINGS } from "../content/buildings";
 import type { Entity } from "../world/entity";
 import type { World } from "../world/world";
+import { playSfx } from "../audio/audio";
+import { drainEvents } from "../world/world";
 
 export function tickWorld(s: Session, dt: number): void {
   const w = s.world;
@@ -28,6 +30,8 @@ export function tickWorld(s: Session, dt: number): void {
   updateConstruction(w, dt);
   towerFire(w, dt, stats);
   if (s.ai) updateAI(s.ai, w, dt);
+
+  drainAndPlay(w);
 
   // cleanup
   for (const e of [...w.entities.values()]) {
@@ -92,5 +96,12 @@ function checkEndConditions(s: Session): void {
     s.victory = false;
     s.state = "defeat";
     w.defeat = true;
+  }
+}
+
+export function drainAndPlay(w: import("../world/world").World): void {
+  const events = drainEvents(w);
+  for (const ev of events) {
+    if (ev.kind === "sfx") playSfx(ev.name);
   }
 }
