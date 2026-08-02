@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { clickButton, killAllBuildings, killEntity, snapshot, startCampaignAt, startSkirmish } from "./helpers";
+import { advance, clickButton, killAllBuildings, killEntity, setPools, snapshot, startCampaignAt, startSkirmish } from "./helpers";
 
 test.describe("endgame", () => {
   test("destroying all enemy buildings triggers victory", async ({ page }) => {
@@ -7,7 +7,7 @@ test.describe("endgame", () => {
     const snap = await snapshot(page);
     const redBuildings = snap.entities.filter((e) => e.kind === "building" && e.faction === "red");
     expect(redBuildings.length).toBeGreaterThan(0);
-    for (const b of redBuildings) await killEntity(page, b.id);
+    await killAllBuildings(page, "red");
     await expect(page.getByRole("heading", { name: "VICTORY" })).toBeVisible({ timeout: 15_000 });
     const s = await snapshot(page);
     expect(s.state).toBe("victory");
@@ -91,5 +91,24 @@ test.describe("endgame", () => {
         { timeout: 20_000 },
       )
       .toBeLessThan(40);
+  });
+
+  test("survive mission wins when the timer expires (m2)", async ({ page }) => {
+    await startCampaignAt(page, 1); // m2: survive 8 minutes
+    // make the AI harmless so it can't destroy our base before the timer
+    await setPools(page, "red", { gold: 0, wood: 0 });
+    await advance(page, 8 * 60 + 5); // past the 480s survive threshold
+    await expect(page.getByRole("heading", { name: "VICTORY" })).toBeVisible({ timeout: 15_000 });
+    const s = await snapshot(page);
+    expect(s.state).toBe("victory");
+  });
+
+  test("winning the final mission returns to the menu", async ({ page }) => {
+    await startCampaignAt(page, 4); // m5: last mission
+    await killAllBuildings(page, "red");
+    await expect(page.getByRole("heading", { name: "VICTORY" })).toBeVisible({ timeout: 15_000 });
+    await clickButton(page, "Play Again");
+    // missionIndex 4 -> 5 is out of range -> reload back to the menu
+    await expect(page.getByRole("heading", { name: "WARS" })).toBeVisible({ timeout: 15_000 });
   });
 });

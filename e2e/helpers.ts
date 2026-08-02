@@ -228,3 +228,30 @@ export async function killAllBuildings(page: Page, faction: "blue" | "red"): Pro
     }
   }, faction);
 }
+
+/**
+ * Fast-forward the simulation by running `seconds` of ticks directly through
+ * the hook (the live loop keeps running on top; total time advances faster).
+ * Used for time-based scenarios (survive missions) where waiting in real time
+ * would be too slow.
+ */
+export async function advance(page: Page, seconds: number): Promise<void> {
+  const ticks = Math.round(seconds * 60);
+  await page.evaluate((n) => {
+    const w = window.__wars!;
+    for (let i = 0; i < n; i++) w.tick(1 / 60);
+  }, ticks);
+}
+
+/** Set a faction's resource pools through the hook. */
+export async function setPools(
+  page: Page,
+  faction: "blue" | "red",
+  pools: { gold: number; wood: number },
+): Promise<void> {
+  await page.evaluate(([f, p]) => {
+    const w = window.__wars!;
+    w.session.world.pools[f].gold = p.gold;
+    w.session.world.pools[f].wood = p.wood;
+  }, [faction, pools] as const);
+}
