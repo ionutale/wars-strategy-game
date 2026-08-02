@@ -89,6 +89,9 @@ export function updateAI(ai: AIController, w: World, dt: number): void {
     }
   }
 
+  // Phase 4: defense — respond to intruders near our buildings
+  defend(ai, w);
+
   // Attack waves
   if (ai.waveTimer >= ai.cfg.waveInterval) {
     ai.waveTimer = 0;
@@ -131,6 +134,35 @@ function assignGather(e: Entity, w: World): void {
   const wood = [...w.resources.values()].find((r) => r.kind === "wood" && r.amount > 0);
   const node = gold ?? wood;
   if (node) orderGather(e, node.id);
+}
+
+const DEFEND_RADIUS = 8; // tiles from any AI building
+
+function defend(ai: AIController, w: World): void {
+  const intruder = nearestIntruder(ai, w);
+  if (!intruder) return;
+  // pull up to 3 combat units that are idle or already attacking this intruder's area
+  const defenders = [...w.entities.values()].filter(
+    (e) => e.kind === "unit" && e.faction === ai.faction && !e.dead && e.type !== "worker"
+      && (!e.order || (e.order.type === "attack" && e.order.targetId === intruder.id)),
+  );
+  for (const u of defenders.slice(0, 3)) {
+    orderAttack(u, intruder.id);
+  }
+}
+
+function nearestIntruder(ai: AIController, w: World): Entity | null {
+  let best: Entity | null = null;
+  let bestD = Infinity;
+  for (const b of w.entities.values()) {
+    if (b.kind !== "building" || b.faction !== ai.faction || b.dead) continue;
+    for (const e of w.entities.values()) {
+      if (e.faction === ai.faction || e.dead || e.kind === "projectile") continue;
+      const d = Math.hypot(e.x - b.x, e.y - b.y);
+      if (d < bestD && d <= DEFEND_RADIUS) { bestD = d; best = e; }
+    }
+  }
+  return best;
 }
 
 function sendWave(ai: AIController, w: World): void {

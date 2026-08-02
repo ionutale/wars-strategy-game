@@ -57,4 +57,20 @@ describe("updateAI", () => {
     runFor(ai, w, 300);
     expect(w.pools.blue.gold).toBe(10);
   });
+
+  it("defends when an enemy unit approaches its base", () => {
+    const { w, ai } = setup();
+    w.pools.red.gold = 100000; w.pools.red.wood = 100000;
+    runFor(ai, w, 600); // build up an army
+    const footmen = [...w.entities.values()].filter((e) => e.type === "footman" && e.faction === "red");
+    expect(footmen.length).toBeGreaterThan(0);
+    // spawn an intruder near the red town hall (50,50)
+    const intruder = createEntity("unit", "blue", "footman", 52, 50, 40);
+    w.entities.set(intruder.id, intruder);
+    updateAI(ai, w, 1);
+    const attackers = [...w.entities.values()].filter(
+      (e) => e.kind === "unit" && e.faction === "red" && e.order && e.order.type === "attack" && e.order.targetId === intruder.id,
+    );
+    expect(attackers.length).toBeGreaterThan(0);
+  });
 });
