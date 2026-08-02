@@ -1795,6 +1795,8 @@ describe("updateAI", () => {
 });
 ```
 
+> **Implemented as committed (deviation note):** The final AI implementation and tests differ from the snippet above in several important ways, all implemented and reviewed in commit 96bd25d (+6f077ca). Key corrections: (1) `cfg` must be assigned in the constructor body — TypeScript class field initializers run BEFORE parameter properties, so `private cfg = DIFF[this.difficulty]` is undefined; (2) tests drive a mini game loop (`updateMovement`/`updateEconomy`/`updateConstruction`/`updateAI`) because training happens in `updateConstruction`, and setup includes an enemy town hall so waves have a target; (3) `placeIfAble`/Phase 2b use a `pickBuilder(ai)` helper preferring idle workers, setting order + `setPath`; (4) Phase 1 is queue-depth aware (`count("worker") + base.queue.length < workerTarget`); (5) Phase 2 builds a second farm when `foodUsed >= foodCap - 2`; (6) `timer`/`waveTimer`/`cfg` are public and `faction` readonly (module-scope `updateAI` reads them); (7) `waveCount` is public. Two matching fixes in `building.ts`: clear stale `{type:"build"}` worker orders on construction completion, and set `progress = 1` after the last queued unit spawns (keeps the "complete ⇔ progress >= 1" invariant — the original snippet reset completed buildings to 0 after training).
+
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run tests/world/systems/ai.test.ts`
