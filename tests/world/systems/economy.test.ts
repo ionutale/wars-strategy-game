@@ -3,6 +3,7 @@ import { createWorld } from "../../../src/world/world";
 import { createEntity } from "../../../src/world/entity";
 import { createGoldMine, createTreePatch } from "../../../src/world/map";
 import { updateEconomy, orderGather, CARGO_CAPACITY } from "../../../src/world/systems/economy";
+import { updateMovement } from "../../../src/world/systems/movement";
 
 function setup() {
   const w = createWorld(40, 40);
@@ -45,5 +46,15 @@ describe("updateEconomy", () => {
     updateEconomy(w, 1);
     expect(mine.amount).toBe(0);
     expect(worker.order).toBeNull();
+  });
+
+  it("walks to the node when ordered to gather", () => {
+    const { w, worker, mine } = setup(); // worker at (2,2), mine at (20,20)
+    orderGather(worker, mine.id);
+    updateEconomy(w, 0.1);
+    expect(worker.path).not.toBeNull();
+    // after walking for a while it should get closer (movement drives the path)
+    for (let i = 0; i < 60; i++) { updateMovement(w, 1 / 6); updateEconomy(w, 1 / 6); }
+    expect(Math.hypot(worker.x - mine.x, worker.y - mine.y)).toBeLessThan(10);
   });
 });

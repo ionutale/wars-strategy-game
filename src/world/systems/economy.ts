@@ -17,7 +17,7 @@ export function updateEconomy(w: World, dt: number): void {
   for (const u of workers) {
     if (u.order && u.order.type === "gather") {
       const node = w.resources.get(u.order.resourceId);
-      if (!node || node.amount <= 0) { u.order = null; continue; }
+      if (!node || node.amount <= 0) { u.order = null; u.path = null; continue; }
       if (u.cargo === 0) {
         if (atNode(u, node)) {
           const take = Math.min(node.amount, CARGO_CAPACITY);
@@ -25,9 +25,11 @@ export function updateEconomy(w: World, dt: number): void {
           u.cargo = take;
           u.cargoType = node.kind;
           sfx(w, "gather");
-          if (node.amount <= 0) { u.order = null; continue; }
+          if (node.amount <= 0) { u.order = null; u.path = null; continue; }
           const depot = nearestDepot(w, u);
           if (depot) setPath(u, { x: depot.x, y: depot.y }, w.map);
+        } else if (!u.path || u.path.length === 0) {
+          setPath(u, { x: node.x, y: node.y }, w.map);
         }
       } else {
         const depot = nearestDepot(w, u);
@@ -37,6 +39,8 @@ export function updateEconomy(w: World, dt: number): void {
           u.cargo = 0;
           u.cargoType = null;
           setPath(u, { x: node.x, y: node.y }, w.map);
+        } else if (!depot || !u.path || u.path.length === 0) {
+          if (depot) setPath(u, { x: depot.x, y: depot.y }, w.map);
         }
       }
     }

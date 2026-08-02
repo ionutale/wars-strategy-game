@@ -174,7 +174,7 @@ function placeWithWorker(w: World, worker: Entity, type: string, tx: number, ty:
   const b = placeFoundation(w, type, worker.faction, tx, ty);
   if (b) {
     worker.path = null;
-    moveTo(worker, { x: b.x + 1.5, y: b.y + 1.5 }, w.map);
+    moveTo(worker, { x: b.x + 1, y: b.y + 1 }, w.map);
     worker.order = { type: "build", buildingId: b.id };
   }
 }
