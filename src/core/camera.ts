@@ -36,8 +36,12 @@ export class Camera {
   clampToMap(mapW: number, mapH: number): void {
     const halfW = this.viewW / (2 * this.zoom * PX_PER_TILE);
     const halfH = this.viewH / (2 * this.zoom * PX_PER_TILE);
-    this.x = Math.min(mapW - halfW, Math.max(halfW, this.x));
-    this.y = Math.min(mapH - halfH, Math.max(halfH, this.y));
+    // When the map is smaller than the viewport, center on it instead of
+    // producing inverted clamp bounds.
+    if (2 * halfW >= mapW) this.x = mapW / 2;
+    else this.x = Math.min(mapW - halfW, Math.max(halfW, this.x));
+    if (2 * halfH >= mapH) this.y = mapH / 2;
+    else this.y = Math.min(mapH - halfH, Math.max(halfH, this.y));
   }
 
   /** Zoom that fits the whole map in the viewport, clamped to [MIN_ZOOM, MAX_ZOOM]. */

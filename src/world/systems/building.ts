@@ -95,12 +95,26 @@ function spawnTrained(w: World, b: Entity, unitType: string): void {
 export function canTrain(w: World, b: Entity, unitType: string): boolean {
   const def = BUILDINGS[b.type];
   if (!def.trains.includes(unitType)) return false;
-  if (b.progress < 1) return false; // must be fully constructed before training
+  // Must be fully constructed before training. A completed building resets
+  // progress to 0 while training, so an unfinished building is identified by
+  // progress < 1 AND an empty queue (nothing trained yet).
+  if (b.progress < 1 && b.queue.length === 0) return false;
   const udef = UNIT_DEFS[unitType];
   const pool = w.pools[b.faction];
   if (pool.gold < udef.cost.gold || pool.wood < udef.cost.wood) return false;
-  if (foodUsed(w, b.faction) >= w.foodCap[b.faction]) return false;
+  // Food is reserved by existing units AND every unit already queued across
+  // the faction's buildings.
+  const queued = queuedUnits(w, b.faction);
+  if (foodUsed(w, b.faction) + queued + 1 > w.foodCap[b.faction]) return false;
   return true;
+}
+
+function queuedUnits(w: World, faction: Entity["faction"]): number {
+  let n = 0;
+  for (const e of w.entities.values()) {
+    if (e.kind === "building" && e.faction === faction && !e.dead) n += e.queue.length;
+  }
+  return n;
 }
 
 export function trainQueue(w: World, b: Entity, unitType: string): boolean {

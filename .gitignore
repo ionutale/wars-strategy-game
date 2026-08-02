@@ -3,3 +3,5 @@ dist/
 .env
 .superpowers/
 .DS_Store
+test-results/
+playwright-report/

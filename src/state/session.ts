@@ -128,8 +128,8 @@ export function startMission(s: Session, m: MissionDef): void {
 export function handleCommand(s: Session, cmd: CommandName, e: Entity): void {
   const w = s.world;
   switch (cmd) {
-    case "stop": e.order = { type: "stop" }; break;
-    case "hold": e.order = { type: "hold" }; break;
+    case "stop": e.order = { type: "stop" }; e.path = null; break;
+    case "hold": e.order = { type: "hold" }; e.path = null; break;
     case "gather-gold": {
       const node = [...w.resources.values()].find((r) => r.kind === "gold" && r.amount > 0);
       if (node) orderGather(e, node.id);

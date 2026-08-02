@@ -11,8 +11,11 @@ import { orderAttack } from "./world/systems/combat";
 import { sfx } from "./world/world";
 import type { CommandName } from "./ui/hud";
 import { MISSIONS } from "./content/missions";
-import { saveProgress, loadProgress } from "./net/api";
+import { saveProgress, loadProgress, getPlayerId } from "./net/api";
 import { startMusic, playSfx } from "./audio/audio";
+import { createEntity } from "./world/entity";
+import { createGoldMine, createTreePatch } from "./world/map";
+import { orderGather } from "./world/systems/economy";
 
 declare global {
   interface Window {
@@ -21,6 +24,10 @@ declare global {
       session: Session;
       cam: Camera;
       tick: (dt: number) => void;
+      createEntity: typeof createEntity;
+      createGoldMine: typeof createGoldMine;
+      createTreePatch: typeof createTreePatch;
+      orderGather: typeof orderGather;
     };
   }
 }
@@ -28,6 +35,9 @@ declare global {
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d")!;
 const session: Session = createSession();
+
+// Ensure the anonymous player profile id exists up front (used by progress saves).
+getPlayerId();
 
 function resize(): void {
   canvas.width = window.innerWidth;
@@ -216,12 +226,14 @@ function fitCameraToMap(): void {
   cam.clampToMap(w.map.w, w.map.h);
 }
 
-showMainMenu({
+let menuCleanup: (() => void) | null = null;
+menuCleanup = showMainMenu({
   onCampaign: () => {
     startMusic();
     startCampaign(session);
     fitCameraToMap();
     if (endCleanup) endCleanup();
+    menuCleanup?.();
     loop.start();
   },
   onSkirmish: (d) => {
@@ -229,6 +241,7 @@ showMainMenu({
     startSkirmish(session, d);
     fitCameraToMap();
     if (endCleanup) endCleanup();
+    menuCleanup?.();
     loop.start();
   },
 });
@@ -284,4 +297,8 @@ window.__wars = {
   session,
   cam,
   tick: (dt: number) => tickWorld(session, dt),
+  createEntity,
+  createGoldMine,
+  createTreePatch,
+  orderGather,
 };

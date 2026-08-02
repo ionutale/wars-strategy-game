@@ -10,6 +10,7 @@ export function orderGather(u: Entity, resourceId: number): void {
   u.order = { type: "gather", resourceId };
   u.cargo = 0;
   u.cargoType = null;
+  u.path = null; // stop following the previous node's path
 }
 
 export function updateEconomy(w: World, dt: number): void {
