@@ -131,12 +131,12 @@ export function handleCommand(s: Session, cmd: CommandName, e: Entity): void {
     case "stop": e.order = { type: "stop" }; e.path = null; break;
     case "hold": e.order = { type: "hold" }; e.path = null; break;
     case "gather-gold": {
-      const node = [...w.resources.values()].find((r) => r.kind === "gold" && r.amount > 0);
+      const node = nearestResource(w, e, "gold");
       if (node) orderGather(e, node.id);
       break;
     }
     case "gather-wood": {
-      const node = [...w.resources.values()].find((r) => r.kind === "wood" && r.amount > 0);
+      const node = nearestResource(w, e, "wood");
       if (node) orderGather(e, node.id);
       break;
     }
@@ -177,4 +177,15 @@ function placeWithWorker(w: World, worker: Entity, type: string, tx: number, ty:
     moveTo(worker, { x: b.x + 1, y: b.y + 1 }, w.map);
     worker.order = { type: "build", buildingId: b.id };
   }
+}
+
+function nearestResource(w: World, u: Entity, kind: "gold" | "wood"): import("../world/map").ResourceNode | null {
+  let best: import("../world/map").ResourceNode | null = null;
+  let bestD = Infinity;
+  for (const r of w.resources.values()) {
+    if (r.kind !== kind || r.amount <= 0) continue;
+    const d = Math.hypot(r.x - u.x, r.y - u.y);
+    if (d < bestD) { bestD = d; best = r; }
+  }
+  return best;
 }

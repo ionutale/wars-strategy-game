@@ -50,7 +50,10 @@ export function updateMovement(w: World, dt: number): void {
       }
     }
   }
-  separateUnits(units);
+  // Only separate idle units (no active path). Units following a path are
+  // moving toward a target; shoving them around cancels their movement and
+  // jams them in clusters (e.g. workers at a mine).
+  separateUnits(units.filter((u) => u.path === null));
 }
 
 export function separateUnits(units: Entity[]): void {

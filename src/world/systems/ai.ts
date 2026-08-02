@@ -53,7 +53,7 @@ export function updateAI(ai: AIController, w: World, dt: number): void {
   } else {
     for (const e of w.entities.values()) {
       if (e.kind === "unit" && e.type === "worker" && e.faction === ai.faction && !e.dead && !e.order) {
-        assignGather(e, w);
+        assignGather(e, w, base.x, base.y);
       }
     }
   }
@@ -129,11 +129,15 @@ function placeIfAble(ai: AIController, type: string, tx: number, ty: number): vo
   }
 }
 
-function assignGather(e: Entity, w: World): void {
-  const gold = [...w.resources.values()].find((r) => r.kind === "gold" && r.amount > 0);
-  const wood = [...w.resources.values()].find((r) => r.kind === "wood" && r.amount > 0);
-  const node = gold ?? wood;
-  if (node) orderGather(e, node.id);
+function assignGather(e: Entity, w: World, homeX: number, homeY: number): void {
+  let best: import("../map").ResourceNode | null = null;
+  let bestD = Infinity;
+  for (const r of w.resources.values()) {
+    if (r.amount <= 0) continue;
+    const d = Math.hypot(r.x - homeX, r.y - homeY);
+    if (d < bestD) { bestD = d; best = r; }
+  }
+  if (best) orderGather(e, best.id);
 }
 
 const DEFEND_RADIUS = 8; // tiles from any AI building

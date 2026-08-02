@@ -53,6 +53,9 @@ export async function snapshot(page: Page): Promise<GameSnapshot> {
         progress: e.progress,
         queue: e.queue,
         dead: e.dead,
+        cargo: e.cargo,
+        cargoType: e.cargoType,
+        hasPath: e.path !== null,
       })),
       resources: [...s.world.resources.values()].map((r) => ({
         id: r.id,

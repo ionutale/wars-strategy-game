@@ -16,6 +16,27 @@ export function orderGather(u: Entity, resourceId: number): void {
 export function updateEconomy(w: World, dt: number): void {
   const workers = [...w.entities.values()].filter((e) => e.kind === "unit" && e.type === "worker" && !e.dead);
   for (const u of workers) {
+    // 1) carrying cargo: deliver it even if the gather order was lost
+    //    (e.g. the node depleted after the final load was picked up).
+    if (u.cargo > 0) {
+      const depot = nearestDepot(w, u);
+      if (depot && atEntity(u, depot)) {
+        if (u.cargoType === "gold") w.pools[u.faction].gold += u.cargo;
+        else w.pools[u.faction].wood += u.cargo;
+        u.cargo = 0;
+        u.cargoType = null;
+        if (u.order && u.order.type === "gather") {
+          const node = w.resources.get(u.order.resourceId);
+          if (node && node.amount > 0) setPath(u, { x: node.x, y: node.y }, w.map);
+          else { u.order = null; u.path = null; }
+        }
+      } else if (!u.path || u.path.length === 0) {
+        if (depot) setPath(u, { x: depot.x, y: depot.y }, w.map);
+      }
+      continue;
+    }
+
+    // 2) gather order
     if (u.order && u.order.type === "gather") {
       const node = w.resources.get(u.order.resourceId);
       if (!node || node.amount <= 0) { u.order = null; u.path = null; continue; }
@@ -24,39 +45,28 @@ export function updateEconomy(w: World, dt: number): void {
         u.path = null;
         continue;
       }
-      if (u.cargo === 0) {
-        if (atNode(u, node)) {
-          const take = Math.min(node.amount, CARGO_CAPACITY);
-          node.amount -= take;
-          u.cargo = take;
-          u.cargoType = node.kind;
-          sfx(w, "gather");
-          if (node.amount <= 0) { u.order = null; u.path = null; continue; }
-          const depot = nearestDepot(w, u);
-          if (depot) setPath(u, { x: depot.x, y: depot.y }, w.map);
-        } else if (!u.path || u.path.length === 0) {
-          setPath(u, { x: node.x, y: node.y }, w.map);
-        }
-      } else {
+      if (atNode(u, node)) {
+        const take = Math.min(node.amount, CARGO_CAPACITY);
+        node.amount -= take;
+        u.cargo = take;
+        u.cargoType = node.kind;
+        sfx(w, "gather");
         const depot = nearestDepot(w, u);
-        if (depot && atEntity(u, depot)) {
-          if (u.cargoType === "gold") w.pools[u.faction].gold += u.cargo;
-          else w.pools[u.faction].wood += u.cargo;
-          u.cargo = 0;
-          u.cargoType = null;
-          setPath(u, { x: node.x, y: node.y }, w.map);
-        } else if (!depot || !u.path || u.path.length === 0) {
-          if (depot) setPath(u, { x: depot.x, y: depot.y }, w.map);
-        }
+        if (depot) setPath(u, { x: depot.x, y: depot.y }, w.map);
+        if (node.amount <= 0) u.order = null; // deliver this final load, then stop
+      } else if (!u.path || u.path.length === 0) {
+        setPath(u, { x: node.x, y: node.y }, w.map);
       }
     }
   }
 }
 
+/** Count this faction's workers assigned to a node (capacity is per-faction). */
 function workersOnNode(w: World, self: Entity, resourceId: number): number {
   let n = 0;
   for (const e of w.entities.values()) {
-    if (e.kind === "unit" && e.type === "worker" && !e.dead && e.order && e.order.type === "gather" && e.order.resourceId === resourceId) {
+    if (e.kind === "unit" && e.type === "worker" && !e.dead && e.faction === self.faction
+      && e.order && e.order.type === "gather" && e.order.resourceId === resourceId) {
       n++;
     }
   }
