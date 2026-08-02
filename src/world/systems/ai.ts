@@ -70,10 +70,7 @@ export function updateAI(ai: AIController, w: World, dt: number): void {
   // Phase 2b: assign free workers to incomplete foundations (they appear before any worker exists)
   for (const b of w.entities.values()) {
     if (b.kind === "building" && b.faction === ai.faction && !b.dead && b.progress > 0 && b.progress < 1 && b.queue.length === 0) {
-      const worker = [...w.entities.values()].find(
-        (e) => e.kind === "unit" && e.type === "worker" && e.faction === ai.faction && !e.dead
-          && !(e.order && e.order.type === "build"),
-      );
+      const worker = pickBuilder(ai);
       if (!worker) break;
       worker.order = { type: "build", buildingId: b.id };
       worker.cargo = 0;
@@ -104,14 +101,23 @@ function canAfford(w: World, faction: Entity["faction"], cost: { gold: number; w
   return pool.gold >= cost.gold && pool.wood >= cost.wood;
 }
 
+function pickBuilder(ai: AIController): Entity | null {
+  const w = ai.w;
+  const candidates = [...w.entities.values()].filter(
+    (e) => e.kind === "unit" && e.type === "worker" && e.faction === ai.faction && !e.dead,
+  );
+  return (
+    candidates.find((e) => !e.order) ??
+    candidates.find((e) => !(e.order && e.order.type === "build")) ??
+    null
+  );
+}
+
 function placeIfAble(ai: AIController, type: string, tx: number, ty: number): void {
   const b = placeFoundation(ai.w, type, ai.faction, Math.round(tx), Math.round(ty));
   if (!b) return;
   const w = ai.w;
-  const worker = [...w.entities.values()].find(
-    (e) => e.kind === "unit" && e.type === "worker" && e.faction === ai.faction && !e.dead
-      && !(e.order && e.order.type === "build"),
-  );
+  const worker = pickBuilder(ai);
   if (worker) {
     worker.order = { type: "build", buildingId: b.id };
     worker.cargo = 0;
