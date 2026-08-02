@@ -24,6 +24,7 @@ export interface Entity {
   pathIndex: number;
   targetId: number | null;
   attackCooldown: number;
+  healCooldown: number;
   cargo: number;
   cargoType: "gold" | "wood" | null;
   splashRadius: number;
@@ -58,6 +59,7 @@ export function createEntity(
     pathIndex: 0,
     targetId: null,
     attackCooldown: 0,
+    healCooldown: 0,
     cargo: 0,
     cargoType: null,
     splashRadius: 0,

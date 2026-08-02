@@ -105,13 +105,14 @@ function updateProjectiles(w: World, dt: number, stats: (e: Entity) => UnitStats
 
 /** Resolve a projectile hit; a missed splash shot lands off-target but still splashes. */
 export function resolveProjectileHit(p: Entity, t: Entity, w: World, missed: boolean): void {
-  if (missed && p.splashRadius > 0) {
-    // land off-target: random point 1..2 tiles away; splash still applies
-    const ang = Math.random() * Math.PI * 2;
-    const off = 1 + Math.random();
-    const x = t.x + Math.cos(ang) * off;
-    const y = t.y + Math.sin(ang) * off;
-    splashDamage(p, x, y, w, false);
+  if (missed) {
+    if (p.splashRadius > 0) {
+      // land off-target: random point 1..2 tiles away; splash still applies
+      const ang = Math.random() * Math.PI * 2;
+      const off = 1 + Math.random();
+      splashDamage(p, t.x + Math.cos(ang) * off, t.y + Math.sin(ang) * off, w, false);
+    }
+    // a miss with no splash deals no damage
     return;
   }
   applyDamage(t, p.cargo, p, w);
@@ -134,8 +135,8 @@ export function updateHealing(w: World, dt: number, stats: (e: Entity) => UnitSt
     if (u.kind !== "unit" || u.dead) continue;
     const s = stats(u);
     if (s.heal <= 0) continue;
-    if (u.attackCooldown > 0) u.attackCooldown -= dt;
-    if (u.attackCooldown > 0) continue;
+    if (u.healCooldown > 0) u.healCooldown -= dt;
+    if (u.healCooldown > 0) continue;
     let best: Entity | null = null;
     let bestMissing = 0;
     for (const e of w.entities.values()) {
@@ -148,7 +149,7 @@ export function updateHealing(w: World, dt: number, stats: (e: Entity) => UnitSt
     if (best) {
       const healed = Math.min(s.heal, bestMissing);
       best.hp += healed;
-      u.attackCooldown = 1 / Math.max(0.1, s.attackSpeed); // heal cadence
+      u.healCooldown = 1 / Math.max(0.1, s.attackSpeed); // heal cadence
       sfx(w, "gather");
     }
   }

@@ -127,4 +127,38 @@ describe("splash and healing", () => {
     updateHealing(w, 2.6, stats); // cooldown passed (1/0.4 = 2.5s)
     expect(ally.hp).toBe(36);
   });
+
+  it("priest heal cooldown is not shared with attack cooldown", () => {
+    const w = createWorld(30, 30);
+    const priest = createEntity("unit", "blue", "priest", 5, 5, 30);
+    const ally = createEntity("unit", "blue", "footman", 6, 5, 40);
+    ally.hp = 20;
+    w.entities.set(priest.id, priest); w.entities.set(ally.id, ally);
+    const PRIEST: UnitStats = { hp: 30, attack: 0, range: 0, attackSpeed: 0.4, armor: 0, splashRadius: 0, missChance: 0, heal: 8, healRange: 4 };
+    const FOOTMAN: UnitStats = { hp: 40, attack: 6, range: 1, attackSpeed: 1, armor: 1, splashRadius: 0, missChance: 0, heal: 0, healRange: 0 };
+    const stats = (e: Entity) => (e.id === priest.id ? PRIEST : FOOTMAN);
+    // first heal is instant (cooldown starts at 0)
+    updateHealing(w, 1 / 60, stats);
+    updateHealing(w, 1, stats);
+    expect(ally.hp).toBe(28);
+    // 1s later: 1.5s remain on a 2.5s cooldown -> no second heal
+    updateHealing(w, 1, stats);
+    expect(ally.hp).toBe(28);
+    // 2s later (total 3s): cooldown expired -> second heal
+    updateHealing(w, 2, stats);
+    expect(ally.hp).toBe(36);
+  });
+
+  it("a miss with no splash deals no damage", () => {
+    const w = createWorld(30, 30);
+    const archer = createEntity("unit", "blue", "archer", 5, 5, 25);
+    const t = createEntity("unit", "red", "footman", 12, 5, 40);
+    w.entities.set(archer.id, archer); w.entities.set(t.id, t);
+    const p = createEntity("projectile", "blue", "projectile", t.x, t.y, 6);
+    p.cargo = 6;
+    p.targetId = t.id;
+    p.splashRadius = 0;
+    resolveProjectileHit(p, t, w, true); // missed, no splash
+    expect(t.hp).toBe(40);
+  });
 });
