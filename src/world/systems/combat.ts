@@ -14,16 +14,13 @@ export interface UnitStats {
 
 export const RANGED_SPEED = 12; // projectile tiles/sec
 
-// Fallback stats so the system works standalone (tests); the orchestrator (Task 19) injects UNIT_DEFS/BUILDINGS stats.
-const DEFAULT_STATS: UnitStats = { hp: 40, attack: 10, range: 1, attackSpeed: 1, armor: 0 };
-
 export function orderAttack(u: Entity, targetId: number): void {
   u.order = { type: "attack", targetId };
   u.targetId = targetId;
   u.path = null; // combat system re-paths toward the target
 }
 
-export function updateCombat(w: World, dt: number, stats: (e: Entity) => UnitStats = () => DEFAULT_STATS): void {
+export function updateCombat(w: World, dt: number, stats: (e: Entity) => UnitStats): void {
   const units = [...w.entities.values()].filter((e) => e.kind === "unit" && !e.dead);
   for (const u of units) {
     if (u.attackCooldown > 0) u.attackCooldown -= dt;
