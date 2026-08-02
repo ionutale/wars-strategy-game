@@ -444,7 +444,13 @@ describe("classifyGesture", () => {
   it("classifies two-pointer spread as pinch", () => {
     const g = classifyGesture({ start: { x: 0, y: 0 }, end: { x: 40, y: 0 } }, { start: { x: 100, y: 0 }, end: { x: 160, y: 0 } });
     expect(g.kind).toBe(GESTURE_PINCH);
-    expect(g.scale).toBeCloseTo(1.6, 5);
+    expect(g.scale).toBeCloseTo(1.2, 5); // endDist/startDist = 120/100
+  });
+
+  it("returns scale 1 when fingers start at the same point", () => {
+    const g = classifyGesture({ start: { x: 50, y: 50 }, end: { x: 60, y: 50 } }, { start: { x: 50, y: 50 }, end: { x: 80, y: 50 } });
+    expect(g.kind).toBe(GESTURE_PINCH);
+    expect(g.scale).toBe(1);
   });
 
   it("distinguishes drag kinds", () => {
