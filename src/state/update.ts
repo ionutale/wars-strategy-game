@@ -1,6 +1,6 @@
 import type { Session } from "./session";
 import { updateMovement } from "../world/systems/movement";
-import { updateCombat, applyDamage, type UnitStats } from "../world/systems/combat";
+import { updateCombat, updateHealing, applyDamage, type UnitStats } from "../world/systems/combat";
 import { updateEconomy } from "../world/systems/economy";
 import { updateConstruction } from "../world/systems/building";
 import { updateAI } from "../world/systems/ai";
@@ -18,14 +18,15 @@ export function tickWorld(s: Session, dt: number): void {
   const stats = (e: Entity): UnitStats => {
     if (e.kind === "building") {
       const d = BUILDINGS[e.type];
-      return { hp: d.hp, attack: d.attack, range: d.range, attackSpeed: d.attackSpeed, armor: 0 };
+      return { hp: d.hp, attack: d.attack, range: d.range, attackSpeed: d.attackSpeed, armor: 0, splashRadius: 0, missChance: 0, heal: 0, healRange: 0 };
     }
     const d = UNIT_DEFS[e.type];
-    return { hp: d.hp, attack: d.attack, range: d.range, attackSpeed: d.attackSpeed, armor: d.armor };
+    return { hp: d.hp, attack: d.attack, range: d.range, attackSpeed: d.attackSpeed, armor: d.armor, splashRadius: d.splashRadius, missChance: d.missChance, heal: d.heal, healRange: d.healRange };
   };
 
   updateMovement(w, dt);
   updateCombat(w, dt, stats);
+  updateHealing(w, dt, stats);
   updateEconomy(w, dt);
   updateConstruction(w, dt);
   towerFire(w, dt, stats);

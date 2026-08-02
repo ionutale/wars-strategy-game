@@ -26,6 +26,8 @@ export interface Entity {
   attackCooldown: number;
   cargo: number;
   cargoType: "gold" | "wood" | null;
+  splashRadius: number;
+  missChance: number;
   progress: number;
   queue: string[];
   facing: number;
@@ -58,6 +60,8 @@ export function createEntity(
     attackCooldown: 0,
     cargo: 0,
     cargoType: null,
+    splashRadius: 0,
+    missChance: 0,
     progress: 0,
     queue: [],
     facing: 0,

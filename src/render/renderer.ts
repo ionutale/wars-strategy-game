@@ -32,9 +32,10 @@ export function render(world: World, cam: Camera, ctx: CanvasRenderingContext2D,
   for (const p of world.entities.values()) {
     if (p.kind !== "projectile" || p.dead) continue;
     const s = cam.worldToScreen(p.x, p.y);
-    ctx.fillStyle = "#fbbf24";
+    const splash = p.splashRadius > 0;
+    ctx.fillStyle = splash ? (p.splashRadius > 1.5 ? "#f97316" : "#c084fc") : "#fbbf24";
     ctx.beginPath();
-    ctx.arc(s.x, s.y, 0.09 * pxPerTile, 0, Math.PI * 2);
+    ctx.arc(s.x, s.y, (splash ? 0.18 : 0.09) * pxPerTile, 0, Math.PI * 2);
     ctx.fill();
   }
 }

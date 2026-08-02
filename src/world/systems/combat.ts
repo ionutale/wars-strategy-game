@@ -10,6 +10,10 @@ export interface UnitStats {
   range: number;       // tiles
   attackSpeed: number; // attacks per second
   armor: number;
+  splashRadius: number; // 0 = no splash
+  missChance: number;   // 0..1 chance the projectile lands off-target
+  heal: number;         // 0 = no healing
+  healRange: number;    // tiles
 }
 
 export const RANGED_SPEED = 12; // projectile tiles/sec
@@ -63,6 +67,8 @@ function fireAt(u: Entity, t: Entity, s: UnitStats, w: World): void {
     applyDamage(t, s.attack, u, w);
   } else {
     const p = createProjectile(w, u.faction, u.x, u.y, s.attack, t.id);
+    p.splashRadius = s.splashRadius;
+    p.missChance = s.missChance;
     w.entities.set(p.id, p);
   }
   sfx(w, "attack");
@@ -88,11 +94,62 @@ function updateProjectiles(w: World, dt: number, stats: (e: Entity) => UnitStats
     const d = Math.hypot(dx, dy);
     const step = RANGED_SPEED * dt;
     if (d <= step) {
-      applyDamage(t, p.cargo, p, w);
+      resolveProjectileHit(p, t, w, Math.random() < p.missChance);
       p.dead = true;
     } else {
       p.x += (dx / d) * step;
       p.y += (dy / d) * step;
+    }
+  }
+}
+
+/** Resolve a projectile hit; a missed splash shot lands off-target but still splashes. */
+export function resolveProjectileHit(p: Entity, t: Entity, w: World, missed: boolean): void {
+  if (missed && p.splashRadius > 0) {
+    // land off-target: random point 1..2 tiles away; splash still applies
+    const ang = Math.random() * Math.PI * 2;
+    const off = 1 + Math.random();
+    const x = t.x + Math.cos(ang) * off;
+    const y = t.y + Math.sin(ang) * off;
+    splashDamage(p, x, y, w, false);
+    return;
+  }
+  applyDamage(t, p.cargo, p, w);
+  if (p.splashRadius > 0) splashDamage(p, t.x, t.y, w);
+}
+
+function splashDamage(p: Entity, x: number, y: number, w: World, excludeTarget = true): void {
+  for (const e of w.entities.values()) {
+    if (e.dead || e.kind === "projectile" || e.faction === p.faction) continue;
+    const d = Math.hypot(e.x - x, e.y - y);
+    if (d <= p.splashRadius && (!excludeTarget || e !== w.entities.get(p.targetId!))) {
+      applyDamage(e, Math.round(p.cargo / 2), p, w);
+    }
+  }
+}
+
+/** Priests auto-heal the most wounded friendly unit in range. */
+export function updateHealing(w: World, dt: number, stats: (e: Entity) => UnitStats): void {
+  for (const u of [...w.entities.values()]) {
+    if (u.kind !== "unit" || u.dead) continue;
+    const s = stats(u);
+    if (s.heal <= 0) continue;
+    if (u.attackCooldown > 0) u.attackCooldown -= dt;
+    if (u.attackCooldown > 0) continue;
+    let best: Entity | null = null;
+    let bestMissing = 0;
+    for (const e of w.entities.values()) {
+      if (e.faction !== u.faction || e.dead || e.kind !== "unit") continue;
+      const missing = e.maxHp - e.hp;
+      if (missing <= 0) continue;
+      const d = Math.hypot(e.x - u.x, e.y - u.y);
+      if (d <= s.healRange && missing > bestMissing) { bestMissing = missing; best = e; }
+    }
+    if (best) {
+      const healed = Math.min(s.heal, bestMissing);
+      best.hp += healed;
+      u.attackCooldown = 1 / Math.max(0.1, s.attackSpeed); // heal cadence
+      sfx(w, "gather");
     }
   }
 }

@@ -70,4 +70,37 @@ test.describe("combat", () => {
       .poll(async () => (await snapshot(page)).entities.find((x) => x.id === attacker)!.hp, { timeout: 15_000 })
       .toBeLessThan(40);
   });
+
+  test("mage splash damages multiple adjacent enemies", async ({ page }) => {
+    await startSkirmish(page);
+    const mage = await spawnUnit(page, "mage", "blue", 6, 12);
+    const e1 = await spawnUnit(page, "footman", "red", 7, 12);
+    const e2 = await spawnUnit(page, "footman", "red", 7, 13);
+    await selectEntity(page, mage);
+    await clickButton(page, "Attack");
+    const epos = await worldToScreen(page, 7, 12);
+    await tapCanvas(page, epos.x, epos.y);
+    await expect
+      .poll(async () => {
+        const s = await snapshot(page);
+        const a = s.entities.find((x) => x.id === e1)!.hp;
+        const b = s.entities.find((x) => x.id === e2)!.hp;
+        return Math.min(a, b);
+      }, { timeout: 20_000 })
+      .toBeLessThan(40); // both damaged by splash
+  });
+
+  test("priest heals a wounded ally", async ({ page }) => {
+    await startSkirmish(page);
+    const priest = await spawnUnit(page, "priest", "blue", 6, 12);
+    const ally = await spawnUnit(page, "footman", "blue", 7, 12);
+    await page.evaluate((aid) => {
+      const w = window.__wars!;
+      const e = w.session.world.entities.get(aid)!;
+      e.hp = 10;
+    }, ally);
+    await expect
+      .poll(async () => (await snapshot(page)).entities.find((x) => x.id === ally)!.hp, { timeout: 20_000 })
+      .toBeGreaterThan(10);
+  });
 });
