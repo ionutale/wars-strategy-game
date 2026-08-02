@@ -552,7 +552,7 @@ git commit -m "feat: touch gesture classification"
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { createEntity, isBuilding, isUnit } from "../../src/world/entity";
+import { createEntity, isBuilding, isUnit } from "../../../src/world/entity";
 
 describe("entity", () => {
   it("allocates unique ids", () => {
@@ -679,7 +679,7 @@ git commit -m "feat: entity model and factory"
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { createMap, MapData, findPath } from "../../src/world/map";
+import { createMap, MapData, findPath } from "../../../src/world/map";
 
 function makeMap(w: number, h: number, blocked: [number, number][]): MapData {
   const m = createMap(w, h);
@@ -865,9 +865,9 @@ git commit -m "feat: tile map, resource nodes, A* pathfinding"
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { createWorld, drainEvents } from "../../src/world/world";
-import { createGoldMine } from "../../src/world/map";
-import { createEntity } from "../../src/world/entity";
+import { createWorld, drainEvents } from "../../../src/world/world";
+import { createGoldMine } from "../../../src/world/map";
+import { createEntity } from "../../../src/world/entity";
 describe("createWorld", () => {
   it("holds entities, resources, and starting resources", () => {
     const w = createWorld(40, 30);
@@ -980,9 +980,9 @@ git commit -m "feat: world container with events"
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { createWorld } from "../../src/world/world";
-import { createEntity } from "../../src/world/entity";
-import { updateMovement, moveTo } from "../../src/world/systems/movement";
+import { createWorld } from "../../../src/world/world";
+import { createEntity } from "../../../src/world/entity";
+import { updateMovement, moveTo } from "../../../src/world/systems/movement";
 
 function setup() {
   const w = createWorld(30, 30);
@@ -1133,9 +1133,9 @@ git commit -m "feat: movement system with pathfinding and separation"
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { createWorld } from "../../src/world/world";
-import { createEntity } from "../../src/world/entity";
-import { updateCombat, orderAttack } from "../../src/world/systems/combat";
+import { createWorld } from "../../../src/world/world";
+import { createEntity } from "../../../src/world/entity";
+import { updateCombat, orderAttack } from "../../../src/world/systems/combat";
 
 function setup() {
   const w = createWorld(30, 30);
@@ -1338,11 +1338,11 @@ git commit -m "feat: combat system with projectiles and retaliation"
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { createWorld } from "../../src/world/world";
-import { createEntity } from "../../src/world/entity";
-import { createGoldMine, createTreePatch } from "../../src/world/map";
-import { updateEconomy, orderGather, CARGO_CAPACITY } from "../../src/world/systems/economy";
-import { moveTo } from "../../src/world/systems/movement";
+import { createWorld } from "../../../src/world/world";
+import { createEntity } from "../../../src/world/entity";
+import { createGoldMine, createTreePatch } from "../../../src/world/map";
+import { updateEconomy, orderGather, CARGO_CAPACITY } from "../../../src/world/systems/economy";
+import { moveTo } from "../../../src/world/systems/movement";
 
 function setup() {
   const w = createWorld(40, 40);
@@ -1484,9 +1484,9 @@ git commit -m "feat: economy system with auto-gather cycles"
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { createWorld } from "../../src/world/world";
-import { createEntity } from "../../src/world/entity";
-import { canPlace, placeFoundation, updateConstruction, trainQueue, canTrain, BUILDINGS, buildCost } from "../../src/world/systems/building";
+import { createWorld } from "../../../src/world/world";
+import { createEntity } from "../../../src/world/entity";
+import { canPlace, placeFoundation, updateConstruction, trainQueue, canTrain, BUILDINGS, buildCost } from "../../../src/world/systems/building";
 
 function setup() {
   const w = createWorld(40, 40);
@@ -1751,10 +1751,10 @@ git commit -m "feat: building system with construction and training queues"
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { createWorld } from "../../src/world/world";
-import { createEntity } from "../../src/world/entity";
-import { createGoldMine, createTreePatch } from "../../src/world/map";
-import { AIController, updateAI } from "../../src/world/systems/ai";
+import { createWorld } from "../../../src/world/world";
+import { createEntity } from "../../../src/world/entity";
+import { createGoldMine, createTreePatch } from "../../../src/world/map";
+import { AIController, updateAI } from "../../../src/world/systems/ai";
 
 function setup() {
   const w = createWorld(60, 60);
